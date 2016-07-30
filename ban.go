@@ -29,8 +29,10 @@ func newBanFromSFEN(sfen string) *Ban {
 
 	// 手番
 	teban := strings.Index("bw", split_sfen[1])
-	new_ban.teban = teban
+	new_ban.teban = Teban(teban)
 
+	// 持ち駒
+	// 手数
 	return new_ban
 }
 
@@ -71,10 +73,10 @@ func (ban *Ban) placeSFENKoma(sfen string) {
 	}
 }
 
-func str2KindAndTeban(str string) (int, int) {
+func str2KindAndTeban(str string) (KomaKind, Teban) {
 	char := str[0:1]
 	index := strings.Index("PLNSBRKGplnsbrkg", char)
-	var teban int
+	var teban Teban
 	if index < 8 {
 		teban = SENTE
 	} else {
@@ -82,7 +84,7 @@ func str2KindAndTeban(str string) (int, int) {
 		index -= 8
 	}
 	kind := index
-	return kind, teban
+	return KomaKind(kind), teban
 }
 
 func (ban *Ban) placeKoma(koma *Koma) {
@@ -98,4 +100,8 @@ func (ban *Ban) placeKoma(koma *Koma) {
 			break
 		}
 	}
+}
+
+func (ban *Ban) applySFENMove(sfen_move string) {
+
 }

@@ -11,6 +11,10 @@ const SW_NAME = "HoneyWaffle"
 const SW_VERSION = "0.1.0"
 const AUTHOR = "Mitsuhiko Watanabe"
 
+const SFEN_STARTPOS = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
+
+var master_ban *Ban
+
 func main() {
 	setUp()
 	usiClient()
@@ -74,16 +78,28 @@ func doGameOver() {
 
 func doPosition(command string) {
 	split_command := strings.Split(command, " ")
-	// TODO: ban
+	// 初期局面
 	if split_command[1] == "startpos" {
-		// TODO: normal start
+		master_ban = newBanFromSFEN(SFEN_STARTPOS)
 	} else if split_command[1] == "sfen" {
-		// TODO: from sfen
+		sfen_start_idx := strings.Index(command, split_command[2])
+		master_ban = newBanFromSFEN(command[sfen_start_idx:])
 	} else {
 		// unexpected
 		return
 	}
-	// TODO: moves
+
+	// moves
+	moves_idx := strings.Index(command, "moves")
+	if moves_idx < 0 {
+		//  movesがない=1手も指されてない
+		return
+	}
+	moves_str := command[moves_idx+6:]
+	moves_arr := strings.Split(moves_str, " ")
+	for _, sfen_move := range moves_arr {
+		master_ban.applySFENMove(sfen_move)
+	}
 }
 
 func doGo(command string) {
