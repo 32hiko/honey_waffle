@@ -5,6 +5,7 @@ import (
 )
 
 type Teban int
+
 const (
 	SENTE Teban = 0
 	GOTE  Teban = 1
@@ -153,9 +154,70 @@ func (teban Teban) aite() Teban {
 }
 
 func (ban *Ban) doMove(from Masu, to Masu, promote bool) {
+	// 移動先のマスに相手の駒がいないか確認する
+	teban := ban.teban
+	aiteban := ban.teban.aite()
+	captured := false
+	for i := 0; i < 18; i++ {
+		if captured {
+			break
+		}
+		for k := KIND_ZERO; k < KIND_NUM; k++ {
+			// 相手の駒がいたら取る
+			if ban.masu[aiteban][k][i] == to {
+				// 取るには、相手の駒の位置を無にする
+				ban.masu[aiteban][k][i] = MU
+				// 自分の駒として駒台に置く
+				for j := 0; j < 18; j++ {
+					if ban.masu[teban][k][j] == 0 {
+						ban.masu[teban][k][j] = KOMADAI
+						break
+					}
+				}
+				captured = true
+				break
+			}
+		}
+	}
 
+	// 移動元のマスの駒を確認する
+	moved := false
+	for i := 0; i < 18; i++ {
+		if moved {
+			break
+		}
+		for k := KIND_ZERO; k < KIND_NUM; k++ {
+			if ban.masu[teban][k][i] == from {
+				if promote {
+					// 成る前の駒の位置を無にする
+					ban.masu[teban][k][i] = MU
+					// 成る場合は駒の種類が変わる
+					promoted_kind := k + 8
+					for j := 0; j < 18; j++ {
+						if ban.masu[teban][promoted_kind][j] == 0 {
+							ban.masu[teban][promoted_kind][j] = to
+							break
+						}
+					}
+				} else {
+					// 駒を移動先のマスに
+					ban.masu[teban][k][i] = to
+				}
+				moved = true
+				break
+			}
+		}
+	}
+	// TODO: moveできていない場合どうするか
 }
 
-func (ban *Ban) doDrop(teban Teban, kind KomaKind, to Masu) {
-
+func (ban *Ban) doDrop(teban Teban, kind KomaKind, to_masu Masu) {
+	// 手番側の駒台にある駒を探し、打つマスに更新する
+	for i := 0; i < 18; i++ {
+		if ban.masu[teban][kind][i] == KOMADAI {
+			ban.masu[teban][kind][i] = to_masu
+			break
+		}
+	}
+	// TODO: 持っていない駒を打つことになる場合どうするか
 }

@@ -18,6 +18,7 @@ const (
 	UMA
 	RYU
 	KIND_NUM // 14
+	KIND_ZERO = FU
 )
 
 type Koma struct {

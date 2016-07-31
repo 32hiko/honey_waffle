@@ -7,8 +7,21 @@ import (
 
 type Masu int
 
+const (
+	MU Masu = 0
+	KOMADAI Masu = 100
+)
+
 func newMasu(suji byte, dan byte) Masu {
 	return Masu(int(suji)*10 + int(dan))
+}
+
+func (masu Masu) suji() byte {
+	return byte(masu / 10)
+}
+
+func (masu Masu) dan() byte {
+	return byte(masu % 10)
 }
 
 // test ok
