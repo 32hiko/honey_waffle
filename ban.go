@@ -79,6 +79,7 @@ func (ban *Ban) placeSFENKoma(sfen string) {
 	}
 }
 
+// test ok
 func str2KindAndTeban(str string) (KomaKind, Teban) {
 	char := str[0:1]
 	index := strings.Index("PLNSBRKGplnsbrkg", char)
