@@ -80,3 +80,83 @@ func TestStr2KindAndTeban(t *testing.T) {
 	}
 	fmt.Println("TestStr2KindAndTeban ok")
 }
+
+func TestPlaceKoma(t *testing.T) {
+	assert := func(actual_ban *Ban, expected_kind KomaKind, expected_masu Masu, expected_teban Teban) {
+		actual_masu := actual_ban.masu[expected_teban][expected_kind][0]
+		if actual_masu != expected_masu {
+			t.Errorf("actual:[%v] expected:[%v]", actual_masu, expected_masu)
+		}
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(FU, 1, 2, SENTE))
+		assert(ban, FU, Masu(12), SENTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(KYO, 2, 3, GOTE))
+		assert(ban, KYO, Masu(23), GOTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(KEI, 3, 4, SENTE))
+		assert(ban, KEI, Masu(34), SENTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(GIN, 4, 5, GOTE))
+		assert(ban, GIN, Masu(45), GOTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(KAKU, 5, 6, SENTE))
+		assert(ban, KAKU, Masu(56), SENTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(HI, 6, 7, GOTE))
+		assert(ban, HI, Masu(67), GOTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(GYOKU, 7, 8, SENTE))
+		assert(ban, GYOKU, Masu(78), SENTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(KIN, 8, 9, GOTE))
+		assert(ban, KIN, Masu(89), GOTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(TOKIN, 9, 1, GOTE))
+		assert(ban, TOKIN, Masu(91), GOTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(NARIKYO, 1, 3, SENTE))
+		assert(ban, NARIKYO, Masu(13), SENTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(NARIKEI, 2, 4, GOTE))
+		assert(ban, NARIKEI, Masu(24), GOTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(NARIGIN, 3, 5, SENTE))
+		assert(ban, NARIGIN, Masu(35), SENTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(KAKU, 4, 6, GOTE))
+		assert(ban, KAKU, Masu(46), GOTE)
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(HI, 5, 7, SENTE))
+		assert(ban, HI, Masu(57), SENTE)
+	}
+	fmt.Println("TestPlaceKoma ok")
+}

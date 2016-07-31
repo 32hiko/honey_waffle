@@ -94,6 +94,7 @@ func str2KindAndTeban(str string) (KomaKind, Teban) {
 	return KomaKind(kind), teban
 }
 
+// test ok
 func (ban *Ban) placeKoma(koma *Koma) {
 	teban := koma.teban
 	masu := newMasu(koma.suji, koma.dan)
