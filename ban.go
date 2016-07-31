@@ -1,6 +1,8 @@
 package main
 
-import "strings"
+import (
+	"strings"
+)
 
 type Teban int
 const (
@@ -10,11 +12,15 @@ const (
 
 type Ban struct {
 	teban Teban
+	tesuu int
 	masu  [2][KIND_NUM][18]Masu
 }
 
 func newBan() *Ban {
-	new_ban := Ban{}
+	new_ban := Ban{
+		teban: SENTE,
+		tesuu: 0,
+	}
 	return &new_ban
 }
 
@@ -103,5 +109,51 @@ func (ban *Ban) placeKoma(koma *Koma) {
 }
 
 func (ban *Ban) applySFENMove(sfen_move string) {
+	var from_str string
+	var to_str string
+	var promote bool = false
+	if len(sfen_move) == 5 {
+		// 成り
+		promote = true
+	}
+	from_str = sfen_move[0:2]
+	to_str = sfen_move[2:4]
+
+	// これから反映する手数
+	ban.tesuu += 1
+
+	// 駒を打つかどうか
+	is_drop := strings.Index(from_str, "*")
+	if is_drop == -1 {
+		// 打たない
+		from_masu := str2Masu(from_str)
+		to_masu := str2Masu(to_str)
+		ban.doMove(from_masu, to_masu, promote)
+	} else {
+		// "*"を含む＝打つ。先手の銀打ちならS*,後手の銀打ちならs*で始め、打つマスの表記は同じ。
+		// のはずだが、将棋所では先後問わず駒の種類が大文字になっている模様。
+		kind, _ := str2KindAndTeban(from_str)
+		// その手当て
+		teban := ban.teban
+		to_masu := str2Masu(to_str)
+		ban.doDrop(teban, kind, to_masu)
+	}
+	// 指し手の反映が終わり、相手の手番に
+	ban.teban = ban.teban.aite()
+}
+
+func (teban Teban) aite() Teban {
+	if teban == SENTE {
+		return GOTE
+	} else {
+		return SENTE
+	}
+}
+
+func (ban *Ban) doMove(from Masu, to Masu, promote bool) {
+
+}
+
+func (ban *Ban) doDrop(teban Teban, kind KomaKind, to Masu) {
 
 }
