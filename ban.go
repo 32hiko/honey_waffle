@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"strconv"
 )
 
 type Teban int
@@ -39,7 +40,14 @@ func newBanFromSFEN(sfen string) *Ban {
 	new_ban.teban = Teban(teban)
 
 	// 持ち駒
+	new_ban.setSFENMochigoma(split_sfen[2])
+
 	// 手数
+	tesuu := 0
+	if len(split_sfen) > 3 {
+		tesuu, _ = strconv.Atoi(split_sfen[3])
+	}
+	new_ban.tesuu = tesuu
 	return new_ban
 }
 
@@ -220,4 +228,42 @@ func (ban *Ban) doDrop(teban Teban, kind KomaKind, to_masu Masu) {
 		}
 	}
 	// TODO: 持っていない駒を打つことになる場合どうするか
+}
+
+func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
+	// 1文字ずつチェックする。
+	var count int = 0
+	for i := 0; i < len(sfen_mochigoma); i++ {
+		char := sfen_mochigoma[i : i+1]
+		// まず-かどうか
+		if char == "-" {
+			// 持ち駒なし、明示的に初期化が必要であればここですること
+			return
+		}
+		num := strings.Index("0123456789", char)
+		if num == -1 {
+			// 数字ではないので、その駒を持っている。
+			kind, teban := str2KindAndTeban(char)
+			if count == 0 {
+				count = 1
+			}
+			// その駒をcount枚、持ち駒にする
+			for c := 0; c < count; c++ {
+				for i := 0; i < 18; i++ {
+					if ban.masu[teban][kind][i] == 0 {
+						ban.masu[teban][kind][i] = KOMADAI
+					}
+				}
+			}
+			count = 0
+		} else {
+			// 次の文字が駒であることが確定。枚数を取得して次の文字をチェックする
+			if count != 0 {
+				// まずないはずだが、歩を10枚以上持っている場合。
+				count = count*10 + num
+			} else {
+				count = num
+			}
+		}
+	}
 }
