@@ -1,8 +1,9 @@
 package main
 
 import (
-	"strings"
+	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Teban int
@@ -266,4 +267,24 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 			}
 		}
 	}
+}
+
+func (ban *Ban) toSFEN(need_tesuu bool) string {
+	var str string = ""
+	// 盤面
+	// 手番
+	// 持ち駒
+	var mochi_str string = ""
+	if mochi_str == "" {
+		str += "-"
+	} else {
+		str += mochi_str
+	}
+
+	// 手数
+	if need_tesuu {
+		str += " "
+		str += fmt.Sprint(ban.tesuu)
+	}
+	return str
 }
