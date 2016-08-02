@@ -17,27 +17,62 @@ const (
 	NARIGIN
 	UMA
 	RYU
-	KIND_NUM // 14
+	KIND_NUM  // 14
 	KIND_ZERO = FU
+	PROMOTE   = 8
 )
 
 type Koma struct {
-	kind     KomaKind
-	suji     byte
-	dan      byte
-	teban    Teban
-	promoted bool
+	kind  KomaKind
+	suji  byte
+	dan   byte
+	teban Teban
 }
 
-func newKoma(kind KomaKind, suji byte, dan byte, teban Teban) *Koma {
+func newKoma(kind KomaKind, teban Teban) *Koma {
 	koma := Koma{
-		kind:     kind,
-		suji:     suji,
-		dan:      dan,
-		teban:    teban,
-		promoted: false,
+		kind:  kind,
+		teban: teban,
 	}
 	return &koma
+}
+
+func newKomaWithSujiAndDan(kind KomaKind, suji byte, dan byte, teban Teban) *Koma {
+	koma := Koma{
+		kind:  kind,
+		suji:  suji,
+		dan:   dan,
+		teban: teban,
+	}
+	return &koma
+}
+
+func promote(kind KomaKind) KomaKind {
+	if promoted(kind) {
+		return kind
+	} else {
+		return kind + PROMOTE
+	}
+}
+
+func promoted(kind KomaKind) bool {
+	return kind >= PROMOTE
+}
+
+func demote(kind KomaKind) KomaKind {
+	if promoted(kind) {
+		return kind - PROMOTE
+	} else {
+		return kind
+	}
+}
+
+func (koma *Koma) promote() {
+	koma.kind = promote(koma.kind)
+}
+
+func (koma Koma) promoted() bool {
+	return promoted(koma.kind)
 }
 
 func (kind KomaKind) kanji() string {

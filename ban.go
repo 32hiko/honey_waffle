@@ -73,9 +73,9 @@ func (ban *Ban) placeSFENKoma(sfen string) {
 					continue
 				}
 				kind, teban := str2KindAndTeban(char)
-				koma := newKoma(kind, x, y, teban)
+				koma := newKomaWithSujiAndDan(kind, x, y, teban)
 				if promote {
-					koma.promoted = true
+					koma.promote()
 					promote = false
 				}
 				ban.placeKoma(koma)
@@ -109,9 +109,6 @@ func (ban *Ban) placeKoma(koma *Koma) {
 	teban := koma.teban
 	masu := newMasu(koma.suji, koma.dan)
 	kind := koma.kind
-	if koma.promoted {
-		kind += 8
-	}
 	for i := 0; i < 18; i++ {
 		if ban.masu[teban][kind][i] == 0 {
 			ban.masu[teban][kind][i] = masu
@@ -176,10 +173,12 @@ func (ban *Ban) doMove(from Masu, to Masu, promote bool) {
 			if ban.masu[aiteban][k][i] == to {
 				// 取るには、相手の駒の位置を無にする
 				ban.masu[aiteban][k][i] = MU
+				// 成っていたら戻す
+				kind := demote(k)
 				// 自分の駒として駒台に置く
 				for j := 0; j < 18; j++ {
-					if ban.masu[teban][k][j] == 0 {
-						ban.masu[teban][k][j] = KOMADAI
+					if ban.masu[teban][kind][j] == 0 {
+						ban.masu[teban][kind][j] = KOMADAI
 						break
 					}
 				}
@@ -271,6 +270,8 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 
 func (ban *Ban) toSFEN(need_tesuu bool) string {
 	var str string = ""
+	// マスをキーにしたマップに移し替える
+
 	// 盤面
 	// 手番
 	// 持ち駒
