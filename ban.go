@@ -54,10 +54,10 @@ func newBanFromSFEN(sfen string) *Ban {
 
 func (ban *Ban) placeSFENKoma(sfen string) {
 	arr := strings.Split(sfen, "/")
-	var y byte = 1
-	var x byte = 9
+	dan := 1
+	suji := 9
 	for _, line := range arr {
-		x = 9
+		suji = 9
 		promote := false
 		// 1文字ずつチェックする。
 		for i := 0; i < len(line); i++ {
@@ -73,19 +73,19 @@ func (ban *Ban) placeSFENKoma(sfen string) {
 					continue
 				}
 				kind, teban := str2KindAndTeban(char)
-				koma := newKomaWithSujiAndDan(kind, x, y, teban)
+				koma := newKomaWithSujiAndDan(kind, teban, suji, dan)
 				if promote {
 					koma.promote()
 					promote = false
 				}
 				ban.placeKoma(koma)
-				x--
+				suji--
 			} else {
 				// 空きマス分飛ばす
-				x -= byte(num)
+				suji -= num
 			}
 		}
-		y++
+		dan++
 	}
 }
 
@@ -152,23 +152,35 @@ func (ban *Ban) applySFENMove(sfen_move string) {
 }
 
 func (teban Teban) aite() Teban {
-	if teban == SENTE {
+	if teban.isSente() {
 		return GOTE
 	} else {
 		return SENTE
 	}
 }
 
-func (ban *Ban) doMove(from Masu, to Masu, promote bool) {
+func (teban Teban) isSente() bool {
+	return (teban == SENTE)
+}
+
+func (teban Teban) sfenTeban() string {
+	if teban.isSente() {
+		return "b"
+	} else {
+		return "w"
+	}
+}
+
+func (ban *Ban) doMove(from Masu, to Masu, promoted bool) {
 	// 移動先のマスに相手の駒がいないか確認する
 	teban := ban.teban
 	aiteban := ban.teban.aite()
 	captured := false
-	for i := 0; i < 18; i++ {
+	for k := KIND_ZERO; k < KIND_NUM; k++ {
 		if captured {
 			break
 		}
-		for k := KIND_ZERO; k < KIND_NUM; k++ {
+		for i := 0; i < 18; i++ {
 			// 相手の駒がいたら取る
 			if ban.masu[aiteban][k][i] == to {
 				// 取るには、相手の駒の位置を無にする
@@ -190,17 +202,17 @@ func (ban *Ban) doMove(from Masu, to Masu, promote bool) {
 
 	// 移動元のマスの駒を確認する
 	moved := false
-	for i := 0; i < 18; i++ {
+	for k := KIND_ZERO; k < KIND_NUM; k++ {
 		if moved {
 			break
 		}
-		for k := KIND_ZERO; k < KIND_NUM; k++ {
+		for i := 0; i < 18; i++ {
 			if ban.masu[teban][k][i] == from {
-				if promote {
+				if promoted {
 					// 成る前の駒の位置を無にする
 					ban.masu[teban][k][i] = MU
 					// 成る場合は駒の種類が変わる
-					promoted_kind := k + 8
+					promoted_kind := promote(k)
 					for j := 0; j < 18; j++ {
 						if ban.masu[teban][promoted_kind][j] == 0 {
 							ban.masu[teban][promoted_kind][j] = to
@@ -269,13 +281,93 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 }
 
 func (ban *Ban) toSFEN(need_tesuu bool) string {
-	var str string = ""
+	str := ""
 	// マスをキーにしたマップに移し替える
-
+	koma_map := make(map[Masu]*Koma)
+	sente_mochigoma := make(map[KomaKind]int)
+	gote_mochigoma := make(map[KomaKind]int)
+	// 先手の駒
+	for k := KIND_ZERO; k < KIND_NUM; k++ {
+		for i := 0; i < 18; i++ {
+			masu := ban.masu[SENTE][k][i]
+			if masu == KOMADAI {
+				sente_mochigoma[k] += 1
+			} else if masu != MU {
+				koma_map[masu] = newKoma(k, SENTE)
+			}
+		}
+	}
+	// 後手の駒
+	for k := KIND_ZERO; k < KIND_NUM; k++ {
+		for i := 0; i < 18; i++ {
+			masu := ban.masu[GOTE][k][i]
+			if masu == KOMADAI {
+				gote_mochigoma[k] += 1
+			} else if masu != MU {
+				koma_map[masu] = newKoma(k, GOTE)
+			}
+		}
+	}
 	// 盤面
+	dan := 1
+	suji := 9
+	empty_masu_count := 0
+	for dan <= 9 {
+		suji = 9
+		for suji >= 1 {
+			masu := newMasu(suji, dan)
+			if koma_map[masu] == nil {
+				// 駒がないマス
+				empty_masu_count++
+			} else {
+				// 駒があるマス
+				if empty_masu_count > 0 {
+					// その駒の左の空きマス数
+					str += fmt.Sprint(empty_masu_count)
+					empty_masu_count = 0
+				}
+				str += koma_map[masu].sfenString()
+			}
+			suji--
+		}
+		if empty_masu_count > 0 {
+			str += fmt.Sprint(empty_masu_count)
+			empty_masu_count = 0
+		}
+		str += "/"
+		dan++
+	}
+	str += " "
+
 	// 手番
+	str += ban.teban.sfenTeban()
+	str += " "
+
 	// 持ち駒
-	var mochi_str string = ""
+	mochi_str := ""
+	for k := KIND_ZERO; k < KIND_NUM; k++ {
+		count := sente_mochigoma[k]
+		if count > 0 {
+			// S2Pb3pのように表記。（先手銀1歩2、後手角1歩3）
+			// TOOD: 本当は、高い駒から順番に出す仕様があるらしい
+			if count != 1 {
+				mochi_str += fmt.Sprint(count)
+			}
+			mochi_str += k.alphabet()
+		}
+	}
+	for k := KIND_ZERO; k < KIND_NUM; k++ {
+		count := gote_mochigoma[k]
+		if count > 0 {
+			// S2Pb3pのように表記。（先手銀1歩2、後手角1歩3）
+			// TOOD: 本当は、高い駒から順番に出す仕様があるらしい
+			if count != 1 {
+				mochi_str += fmt.Sprint(count)
+			}
+			mochi_str += strings.ToLower(k.alphabet())
+		}
+	}
+
 	if mochi_str == "" {
 		str += "-"
 	} else {

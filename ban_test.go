@@ -90,73 +90,73 @@ func TestPlaceKoma(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(FU, 1, 2, SENTE))
+		ban.placeKoma(newKomaWithSujiAndDan(FU, SENTE, 1, 2))
 		assert(ban, FU, Masu(12), SENTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(KYO, 2, 3, GOTE))
+		ban.placeKoma(newKomaWithSujiAndDan(KYO, GOTE, 2, 3))
 		assert(ban, KYO, Masu(23), GOTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(KEI, 3, 4, SENTE))
+		ban.placeKoma(newKomaWithSujiAndDan(KEI, SENTE, 3, 4))
 		assert(ban, KEI, Masu(34), SENTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(GIN, 4, 5, GOTE))
+		ban.placeKoma(newKomaWithSujiAndDan(GIN, GOTE, 4, 5))
 		assert(ban, GIN, Masu(45), GOTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(KAKU, 5, 6, SENTE))
+		ban.placeKoma(newKomaWithSujiAndDan(KAKU, SENTE, 5, 6))
 		assert(ban, KAKU, Masu(56), SENTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(HI, 6, 7, GOTE))
+		ban.placeKoma(newKomaWithSujiAndDan(HI, GOTE, 6, 7))
 		assert(ban, HI, Masu(67), GOTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(GYOKU, 7, 8, SENTE))
+		ban.placeKoma(newKomaWithSujiAndDan(GYOKU, SENTE, 7, 8))
 		assert(ban, GYOKU, Masu(78), SENTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(KIN, 8, 9, GOTE))
+		ban.placeKoma(newKomaWithSujiAndDan(KIN, GOTE, 8, 9))
 		assert(ban, KIN, Masu(89), GOTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(TOKIN, 9, 1, GOTE))
+		ban.placeKoma(newKomaWithSujiAndDan(TOKIN, GOTE, 9, 1))
 		assert(ban, TOKIN, Masu(91), GOTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(NARIKYO, 1, 3, SENTE))
+		ban.placeKoma(newKomaWithSujiAndDan(NARIKYO, SENTE, 1, 3))
 		assert(ban, NARIKYO, Masu(13), SENTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(NARIKEI, 2, 4, GOTE))
+		ban.placeKoma(newKomaWithSujiAndDan(NARIKEI, GOTE, 2, 4))
 		assert(ban, NARIKEI, Masu(24), GOTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(NARIGIN, 3, 5, SENTE))
+		ban.placeKoma(newKomaWithSujiAndDan(NARIGIN, SENTE, 3, 5))
 		assert(ban, NARIGIN, Masu(35), SENTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(KAKU, 4, 6, GOTE))
-		assert(ban, KAKU, Masu(46), GOTE)
+		ban.placeKoma(newKomaWithSujiAndDan(UMA, GOTE, 4, 6))
+		assert(ban, UMA, Masu(46), GOTE)
 	}
 	{
 		ban := newBan()
-		ban.placeKoma(newKomaWithSujiAndDan(HI, 5, 7, SENTE))
-		assert(ban, HI, Masu(57), SENTE)
+		ban.placeKoma(newKomaWithSujiAndDan(RYU, SENTE, 5, 7))
+		assert(ban, RYU, Masu(57), SENTE)
 	}
 	fmt.Println("TestPlaceKoma ok")
 }

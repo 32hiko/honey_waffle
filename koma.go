@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 type KomaKind int
 
 const (
@@ -24,9 +26,9 @@ const (
 
 type Koma struct {
 	kind  KomaKind
-	suji  byte
-	dan   byte
 	teban Teban
+	suji  int
+	dan   int
 }
 
 func newKoma(kind KomaKind, teban Teban) *Koma {
@@ -37,12 +39,12 @@ func newKoma(kind KomaKind, teban Teban) *Koma {
 	return &koma
 }
 
-func newKomaWithSujiAndDan(kind KomaKind, suji byte, dan byte, teban Teban) *Koma {
+func newKomaWithSujiAndDan(kind KomaKind, teban Teban, suji int, dan int) *Koma {
 	koma := Koma{
 		kind:  kind,
+		teban: teban,
 		suji:  suji,
 		dan:   dan,
-		teban: teban,
 	}
 	return &koma
 }
@@ -73,6 +75,42 @@ func (koma *Koma) promote() {
 
 func (koma Koma) promoted() bool {
 	return promoted(koma.kind)
+}
+
+func (koma *Koma) sfenString() string {
+	str := ""
+	if promoted(koma.kind) {
+		str += "+"
+	}
+	if koma.teban.isSente() {
+		str += koma.kind.alphabet()
+	} else {
+		str += strings.ToLower(koma.kind.alphabet())
+	}
+	return str
+}
+
+func (kind KomaKind) alphabet() string {
+	switch demote(kind) {
+	case FU:
+		return "P"
+	case KYO:
+		return "L"
+	case KEI:
+		return "N"
+	case GIN:
+		return "S"
+	case KAKU:
+		return "B"
+	case HI:
+		return "R"
+	case GYOKU:
+		return "K"
+	case KIN:
+		return "G"
+	default:
+		return ""
+	}
 }
 
 func (kind KomaKind) kanji() string {
