@@ -160,3 +160,45 @@ func TestPlaceKoma(t *testing.T) {
 	}
 	fmt.Println("TestPlaceKoma ok")
 }
+
+func TestNewBanFromSFEN(t *testing.T) {
+	assert := func(actual string, expected string) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		ban := newBanFromSFEN(SFEN_STARTPOS)
+		assert(ban.toSFEN(true), SFEN_STARTPOS)
+	}
+	{
+		sfen := "4k4/1r5b1/9/9/9/9/PPPPPPPPP/9/LNSGKGSNL w BR9p2l2n2s2g 123"
+		ban := newBanFromSFEN(sfen)
+		assert(ban.toSFEN(true), sfen)
+	}
+	fmt.Println("TestNewBanFromSFEN ok")
+}
+
+func TestApplySFENMove(t *testing.T) {
+	assert := func(actual string, expected string) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		ban := newBanFromSFEN(SFEN_STARTPOS)
+		ban.applySFENMove("7g7f")
+		assert(ban.toSFEN(true), "lnsgkgsnl/1r5b1/ppppppppp/9/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL w - 2")
+		ban.applySFENMove("3c3d")
+		assert(ban.toSFEN(true), "lnsgkgsnl/1r5b1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL b - 3")
+		ban.applySFENMove("8h2b+")
+		assert(ban.toSFEN(true), "lnsgkgsnl/1r5+B1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/7R1/LNSGKGSNL w B 4")
+		ban.applySFENMove("3a2b")
+		assert(ban.toSFEN(true), "lnsgkg1nl/1r5s1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/7R1/LNSGKGSNL b Bb 5")
+		ban.applySFENMove("B*8h")
+		assert(ban.toSFEN(true), "lnsgkg1nl/1r5s1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL w b 6")
+		ban.applySFENMove("b*5b")
+		assert(ban.toSFEN(true), "lnsgkg1nl/1r2b2s1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL b - 7")
+	}
+	fmt.Println("TestApplySFENMove ok")
+}

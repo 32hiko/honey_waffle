@@ -9,8 +9,9 @@ import (
 type Teban int
 
 const (
-	SENTE Teban = 0
-	GOTE  Teban = 1
+	SENTE     Teban = 0
+	GOTE      Teban = 1
+	TEBAN_NUM Teban = 2
 )
 
 type Ban struct {
@@ -27,6 +28,7 @@ func newBan() *Ban {
 	return &new_ban
 }
 
+// test ok
 func newBanFromSFEN(sfen string) *Ban {
 	// 例：lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1
 	// -は両者持ち駒がない場合。ある場合は、S2Pb3pのように表記。（先手銀1歩2、後手角1歩3）最後の数字は手数。
@@ -52,6 +54,7 @@ func newBanFromSFEN(sfen string) *Ban {
 	return new_ban
 }
 
+// test ok
 func (ban *Ban) placeSFENKoma(sfen string) {
 	arr := strings.Split(sfen, "/")
 	dan := 1
@@ -117,6 +120,7 @@ func (ban *Ban) placeKoma(koma *Koma) {
 	}
 }
 
+// test ok
 func (ban *Ban) applySFENMove(sfen_move string) {
 	var from_str string
 	var to_str string
@@ -151,6 +155,7 @@ func (ban *Ban) applySFENMove(sfen_move string) {
 	ban.teban = ban.teban.aite()
 }
 
+// test ok
 func (teban Teban) aite() Teban {
 	if teban.isSente() {
 		return GOTE
@@ -159,10 +164,12 @@ func (teban Teban) aite() Teban {
 	}
 }
 
+// test ok
 func (teban Teban) isSente() bool {
 	return (teban == SENTE)
 }
 
+// test ok
 func (teban Teban) sfenTeban() string {
 	if teban.isSente() {
 		return "b"
@@ -171,6 +178,7 @@ func (teban Teban) sfenTeban() string {
 	}
 }
 
+// test ok
 func (ban *Ban) doMove(from Masu, to Masu, promoted bool) {
 	// 移動先のマスに相手の駒がいないか確認する
 	teban := ban.teban
@@ -231,6 +239,7 @@ func (ban *Ban) doMove(from Masu, to Masu, promoted bool) {
 	// TODO: moveできていない場合どうするか
 }
 
+// test ok
 func (ban *Ban) doDrop(teban Teban, kind KomaKind, to_masu Masu) {
 	// 手番側の駒台にある駒を探し、打つマスに更新する
 	for i := 0; i < 18; i++ {
@@ -242,6 +251,7 @@ func (ban *Ban) doDrop(teban Teban, kind KomaKind, to_masu Masu) {
 	// TODO: 持っていない駒を打つことになる場合どうするか
 }
 
+// test ok
 func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 	// 1文字ずつチェックする。
 	var count int = 0
@@ -264,6 +274,7 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 				for i := 0; i < 18; i++ {
 					if ban.masu[teban][kind][i] == 0 {
 						ban.masu[teban][kind][i] = KOMADAI
+						break
 					}
 				}
 			}
@@ -280,6 +291,7 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 	}
 }
 
+// test ok
 func (ban *Ban) toSFEN(need_tesuu bool) string {
 	str := ""
 	// マスをキーにしたマップに移し替える
@@ -337,6 +349,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 		str += "/"
 		dan++
 	}
+	str = strings.TrimSuffix(str, "/")
 	str += " "
 
 	// 手番
@@ -380,4 +393,15 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 		str += fmt.Sprint(ban.tesuu)
 	}
 	return str
+}
+
+// for test
+func (ban *Ban) dumpMasu() {
+	for t := SENTE; t < TEBAN_NUM; t++ {
+		for k := KIND_ZERO; k < KIND_NUM; k++ {
+			for i := 0; i < 18; i++ {
+				fmt.Println(t, k, i, ban.masu[t][k][i])
+			}
+		}
+	}
 }
