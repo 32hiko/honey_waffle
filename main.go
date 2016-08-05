@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -107,6 +108,44 @@ func doGo(command string) {
 	if len(split_command) < 5 {
 		// unexpected
 		return
+	}
+	i := 1
+	btime := 0
+	wtime := 0
+	byoyomi := 0
+	for {
+		switch split_command[i] {
+		case "ponder":
+			// TODO: ponderを有効にする。先読みは違う方式でやるつもりだけど
+			i++
+		case "btime":
+			// 先手持ち時間(ms)
+			btime, _ = strconv.Atoi(split_command[i+1])
+			i += 2
+		case "wtime":
+			// 後手持ち時間(ms)
+			wtime, _ = strconv.Atoi(split_command[i+1])
+			i += 2
+		case "binc":
+			// TODO: フィッシャークロックの先手増加時間(ms)
+			i += 2
+		case "winc":
+			// TODO: フィッシャークロックの後手増加時間(ms)
+			i += 2
+		case "byoyomi":
+			// 秒読み(ms)
+			byoyomi, _ = strconv.Atoi(split_command[i+1])
+			i += 2
+		case "infinite":
+			// TODO: 検討用に、stopコマンドがくるまで読み続ける
+			i++
+		case "searchmoves":
+			// TODO: 先の局面を検討？上位プログラム向け機能かな？
+			i++
+		}
+		if i >= (len(split_command) - 1) {
+			break
+		}
 	}
 	// TODO: time management
 	// TODO: search
