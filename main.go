@@ -104,15 +104,23 @@ func doPosition(command string) {
 }
 
 func doGo(command string) {
-	split_command := strings.Split(command, " ")
+	btime_str, wtime_str, byoyomi_str := parseGo(command)
+	btime, _ := strconv.Atoi(btime_str)
+	wtime, _ := strconv.Atoi(wtime_str)
+	byoyomi, _ := strconv.Atoi(byoyomi_str)
+	fmt.Println(btime, wtime, byoyomi)
+	// TODO: time management
+	// TODO: search
+	// TODO: response bestmove
+}
+
+func parseGo(go_command string) (btime, wtime, byoyomi string) {
+	split_command := strings.Split(go_command, " ")
 	if len(split_command) < 5 {
 		// unexpected
 		return
 	}
 	i := 1
-	btime := 0
-	wtime := 0
-	byoyomi := 0
 	for {
 		switch split_command[i] {
 		case "ponder":
@@ -120,11 +128,11 @@ func doGo(command string) {
 			i++
 		case "btime":
 			// 先手持ち時間(ms)
-			btime, _ = strconv.Atoi(split_command[i+1])
+			btime = split_command[i+1]
 			i += 2
 		case "wtime":
 			// 後手持ち時間(ms)
-			wtime, _ = strconv.Atoi(split_command[i+1])
+			wtime = split_command[i+1]
 			i += 2
 		case "binc":
 			// TODO: フィッシャークロックの先手増加時間(ms)
@@ -134,7 +142,7 @@ func doGo(command string) {
 			i += 2
 		case "byoyomi":
 			// 秒読み(ms)
-			byoyomi, _ = strconv.Atoi(split_command[i+1])
+			byoyomi = split_command[i+1]
 			i += 2
 		case "infinite":
 			// TODO: 検討用に、stopコマンドがくるまで読み続ける
@@ -147,7 +155,5 @@ func doGo(command string) {
 			break
 		}
 	}
-	// TODO: time management
-	// TODO: search
-	// TODO: response bestmove
+	return
 }
