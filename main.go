@@ -108,12 +108,23 @@ func doGo(command string) {
 	btime, _ := strconv.Atoi(btime_str)
 	wtime, _ := strconv.Atoi(wtime_str)
 	byoyomi, _ := strconv.Atoi(byoyomi_str)
-	fmt.Println(btime, wtime, byoyomi)
-	// TODO: time management
-	// TODO: search
-	// TODO: response bestmove
+
+	// 仮実装
+	config := &PlayerConfig{
+		btime:   btime,
+		wtime:   wtime,
+		byoyomi: byoyomi}
+	player := &Player{
+		master: master_ban,
+		config: config,
+	}
+	bestmove, score := player.search()
+	// 仮実装
+	usiResponse("info time 0 depth 1 nodes 1 score cp " + fmt.Sprint(score))
+	usiResponse("bestmove " + bestmove)
 }
 
+// test ok
 func parseGo(go_command string) (btime, wtime, byoyomi string) {
 	split_command := strings.Split(go_command, " ")
 	if len(split_command) < 5 {
