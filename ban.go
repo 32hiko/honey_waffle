@@ -236,7 +236,7 @@ func (ban *Ban) doMove(from Masu, to Masu, promoted bool) {
 			}
 		}
 	}
-	// TODO: moveできていない場合どうするか
+	// TODO: moveできていない場合どうするか(error case)
 }
 
 // test ok
@@ -248,7 +248,7 @@ func (ban *Ban) doDrop(teban Teban, kind KomaKind, to_masu Masu) {
 			break
 		}
 	}
-	// TODO: 持っていない駒を打つことになる場合どうするか
+	// TODO: 持っていない駒を打つことになる場合どうするか(error case)
 }
 
 // test ok

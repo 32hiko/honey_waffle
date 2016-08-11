@@ -156,7 +156,7 @@ func parseGo(go_command string) (btime, wtime, byoyomi string) {
 			byoyomi = split_command[i+1]
 			i += 2
 		case "infinite":
-			// TODO: 検討用に、stopコマンドがくるまで読み続ける
+			// TODO: 検討用に、stopコマンドがくるまで読み続ける→対応するには、stopにも反応が必要。
 			i++
 		case "searchmoves":
 			// TODO: 先の局面を検討？上位プログラム向け機能かな？
