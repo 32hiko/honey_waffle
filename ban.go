@@ -405,3 +405,9 @@ func (ban *Ban) dumpMasu() {
 		}
 	}
 }
+
+func (ban *Ban) isOute() bool {
+	// TODO 王手がかかっている状態かチェックする実装
+	// 全駒分のBitBoardが必要。
+	return false
+}

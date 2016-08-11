@@ -18,6 +18,7 @@ func (player *Player) search() (bestmove string, score int) {
 	if moves.count() == 0 {
 		bestmove = "resign"
 		score = 0
+		return
 	}
 	// TODO 定跡があればそこから指す
 	// TODO 普通に探索する
