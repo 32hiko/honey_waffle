@@ -124,7 +124,7 @@ func (ban *Ban) placeKoma(koma *Koma, masu Masu) {
 	teban := koma.teban
 	kind := koma.kind
 	for i := 0; i < 18; i++ {
-		if ban.masu[teban][kind][i] == 0 {
+		if ban.masu[teban][kind][i] == MU {
 			ban.masu[teban][kind][i] = masu
 			break
 		}
@@ -210,7 +210,7 @@ func (ban *Ban) doMove(from Masu, to Masu, promoted bool) {
 				kind := demote(k)
 				// 自分の駒として駒台に置く
 				for j := 0; j < 18; j++ {
-					if ban.masu[teban][kind][j] == 0 {
+					if ban.masu[teban][kind][j] == MU {
 						ban.masu[teban][kind][j] = KOMADAI
 						break
 					}
@@ -235,7 +235,7 @@ func (ban *Ban) doMove(from Masu, to Masu, promoted bool) {
 					// 成る場合は駒の種類が変わる
 					promoted_kind := promote(k)
 					for j := 0; j < 18; j++ {
-						if ban.masu[teban][promoted_kind][j] == 0 {
+						if ban.masu[teban][promoted_kind][j] == MU {
 							ban.masu[teban][promoted_kind][j] = to
 							break
 						}
@@ -285,7 +285,7 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 			// その駒をcount枚、持ち駒にする
 			for c := 0; c < count; c++ {
 				for i := 0; i < 18; i++ {
-					if ban.masu[teban][kind][i] == 0 {
+					if ban.masu[teban][kind][i] == MU {
 						ban.masu[teban][kind][i] = KOMADAI
 						break
 					}

@@ -80,11 +80,22 @@ func generateMoves(ban *Ban, masu Masu, koma *Koma) *Moves {
 	return moves
 }
 
-var KIKI_FU = []Masu{-1}
-var KIKI_KEI = []Masu{-12, 8}
-var KIKI_GIN = []Masu{-9, -1, 9, -8, 11}
-var KIKI_KIN = []Masu{-9, -1, 9, -10, 10, 1}
-var KIKI_GYOKU = []Masu{-9, -1, 9, -10, 10, -11, 1, 11}
+var MOVE_N Masu = newMasu(0, -1)
+var MOVE_S Masu = newMasu(0, 1)
+var MOVE_E Masu = newMasu(-1, 0)
+var MOVE_W Masu = newMasu(1, 0)
+var MOVE_NE Masu = plus(MOVE_N, MOVE_E)
+var MOVE_NW Masu = plus(MOVE_N, MOVE_W)
+var MOVE_SE Masu = plus(MOVE_S, MOVE_E)
+var MOVE_SW Masu = plus(MOVE_S, MOVE_W)
+var MOVE_KEI_E Masu = plus(MOVE_NE, MOVE_N)
+var MOVE_KEI_W Masu = plus(MOVE_NW, MOVE_N)
+
+var KIKI_FU = []Masu{MOVE_N}
+var KIKI_KEI = []Masu{MOVE_KEI_E, MOVE_KEI_W}
+var KIKI_GIN = []Masu{MOVE_N, MOVE_NE, MOVE_NW, MOVE_SE, MOVE_SW}
+var KIKI_KIN = []Masu{MOVE_N, MOVE_NE, MOVE_NW, MOVE_E, MOVE_W, MOVE_S}
+var KIKI_GYOKU = []Masu{MOVE_N, MOVE_NE, MOVE_NW, MOVE_E, MOVE_W, MOVE_S, MOVE_SE, MOVE_SW}
 
 func getKiki(masu Masu, koma *Koma) *Moves {
 	kiki := newMoves()
@@ -103,11 +114,17 @@ func getKiki(masu Masu, koma *Koma) *Moves {
 	}
 	for _, kiki_to := range kind_kiki {
 		if teban.isSente() {
-			move := newMove(masu, masu+kiki_to)
-			kiki.moves_map[kiki.count()] = move
+			to_masu, ok := plusWithCheck(masu, kiki_to)
+			if ok {
+				move := newMove(masu, to_masu)
+				kiki.moves_map[kiki.count()] = move
+			}
 		} else {
-			move := newMove(masu, masu-kiki_to)
-			kiki.moves_map[kiki.count()] = move
+			to_masu, ok := minusWithCheck(masu, kiki_to)
+			if ok {
+				move := newMove(masu, to_masu)
+				kiki.moves_map[kiki.count()] = move
+			}
 		}
 	}
 	return kiki
