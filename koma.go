@@ -80,6 +80,22 @@ func (koma *Koma) sfenString() string {
 	return str
 }
 
+func (kind KomaKind) canFarMove() bool {
+	if kind == KYO || kind == KAKU || kind == HI || kind == UMA || kind == RYU {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (kind KomaKind) isKinMove() bool {
+	if kind == KIN || kind == TOKIN || kind == NARIKYO || kind == NARIKEI || kind == NARIGIN {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (kind KomaKind) alphabet() string {
 	switch demote(kind) {
 	case FU:

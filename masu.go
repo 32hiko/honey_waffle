@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -31,4 +32,13 @@ func str2Masu(str string) Masu {
 	char_y := str[1:2]
 	int_y := strings.Index("0abcdefghi", char_y)
 	return Masu(int_x*10 + int_y)
+}
+
+const DAN2STR string = "0abcdefghi"
+
+func (masu Masu) masu2Str() string {
+	// 77 -> 7g
+	suji := masu.suji()
+	dan := masu.dan()
+	return fmt.Sprint(suji) + DAN2STR[dan:dan+1]
 }

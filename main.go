@@ -121,7 +121,7 @@ func doGo(command string) {
 	bestmove, score := player.search()
 	// 仮実装
 	usiResponse("info time 0 depth 1 nodes 1 score cp " + fmt.Sprint(score))
-	usiResponse("bestmove " + bestmove)
+	usiResponse("bestmove " +bestmove)
 }
 
 // test ok

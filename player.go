@@ -24,7 +24,7 @@ func (player *Player) search() (bestmove string, score int) {
 	// TODO 普通に探索する
 	// TODO 時間配分
 	// TODO 送信
-	bestmove = "resign"
-	score = 0
+	bestmove = moves.moves_map[0].toUSIMove()
+	score = moves.count()
 	return
 }
