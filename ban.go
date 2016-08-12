@@ -31,6 +31,14 @@ func newBan() *Ban {
 	return &new_ban
 }
 
+func (ban *Ban) getTebanKoma(teban Teban) Kmap {
+	if teban.isSente() {
+		return ban.komap.sente_koma
+	} else {
+		return ban.komap.gote_koma
+	}
+}
+
 // test ok
 func newBanFromSFEN(sfen string) *Ban {
 	// 例：lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1
@@ -156,6 +164,8 @@ func (ban *Ban) applySFENMove(sfen_move string) {
 	}
 	// 指し手の反映が終わり、相手の手番に
 	ban.teban = ban.teban.aite()
+	// 駒マップは使えないものとする
+	ban.komap_ready = false
 }
 
 // test ok
@@ -299,6 +309,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 	str := ""
 	if !ban.komap_ready {
 		ban.komap = newKomap(ban)
+		ban.komap_ready = true
 	}
 	// 盤面
 	dan := 1
@@ -342,7 +353,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 		count := ban.komap.sente_mochigoma[k]
 		if count > 0 {
 			// S2Pb3pのように表記。（先手銀1歩2、後手角1歩3）
-			// TOOD: 本当は、高い駒から順番に出す仕様があるらしい
+			// TODO 本当は、高い駒から順番に出す仕様があるらしい
 			if count != 1 {
 				mochi_str += fmt.Sprint(count)
 			}
@@ -353,7 +364,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 		count := ban.komap.gote_mochigoma[k]
 		if count > 0 {
 			// S2Pb3pのように表記。（先手銀1歩2、後手角1歩3）
-			// TOOD: 本当は、高い駒から順番に出す仕様があるらしい
+			// TODO 本当は、高い駒から順番に出す仕様があるらしい
 			if count != 1 {
 				mochi_str += fmt.Sprint(count)
 			}
@@ -391,6 +402,7 @@ func (ban *Ban) isOute() bool {
 	// 全駒分のBitBoardが必要。
 	if !(ban.komap_ready) {
 		ban.komap = newKomap(ban)
+		ban.komap_ready = true
 	}
 	return false
 }
