@@ -15,15 +15,18 @@ const (
 )
 
 type Ban struct {
-	teban Teban
-	tesuu int
-	masu  [2][KIND_NUM][18]Masu
+	teban       Teban
+	tesuu       int
+	masu        [TEBAN_NUM][KIND_NUM][18]Masu
+	komap_ready bool
+	komap       *Komap
 }
 
 func newBan() *Ban {
 	new_ban := Ban{
-		teban: SENTE,
-		tesuu: 0,
+		teban:       SENTE,
+		tesuu:       0,
+		komap_ready: false,
 	}
 	return &new_ban
 }
@@ -76,12 +79,13 @@ func (ban *Ban) placeSFENKoma(sfen string) {
 					continue
 				}
 				kind, teban := str2KindAndTeban(char)
-				koma := newKomaWithSujiAndDan(kind, teban, suji, dan)
+				koma := newKoma(kind, teban)
+				masu := newMasu(suji, dan)
 				if promote {
 					koma.promote()
 					promote = false
 				}
-				ban.placeKoma(koma)
+				ban.placeKoma(koma, masu)
 				suji--
 			} else {
 				// 空きマス分飛ばす
@@ -108,9 +112,8 @@ func str2KindAndTeban(str string) (KomaKind, Teban) {
 }
 
 // test ok
-func (ban *Ban) placeKoma(koma *Koma) {
+func (ban *Ban) placeKoma(koma *Koma, masu Masu) {
 	teban := koma.teban
-	masu := newMasu(koma.suji, koma.dan)
 	kind := koma.kind
 	for i := 0; i < 18; i++ {
 		if ban.masu[teban][kind][i] == 0 {
@@ -294,31 +297,8 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 // test ok
 func (ban *Ban) toSFEN(need_tesuu bool) string {
 	str := ""
-	// マスをキーにしたマップに移し替える
-	koma_map := make(map[Masu]*Koma)
-	sente_mochigoma := make(map[KomaKind]int)
-	gote_mochigoma := make(map[KomaKind]int)
-	// 先手の駒
-	for k := KIND_ZERO; k < KIND_NUM; k++ {
-		for i := 0; i < 18; i++ {
-			masu := ban.masu[SENTE][k][i]
-			if masu == KOMADAI {
-				sente_mochigoma[k] += 1
-			} else if masu != MU {
-				koma_map[masu] = newKoma(k, SENTE)
-			}
-		}
-	}
-	// 後手の駒
-	for k := KIND_ZERO; k < KIND_NUM; k++ {
-		for i := 0; i < 18; i++ {
-			masu := ban.masu[GOTE][k][i]
-			if masu == KOMADAI {
-				gote_mochigoma[k] += 1
-			} else if masu != MU {
-				koma_map[masu] = newKoma(k, GOTE)
-			}
-		}
+	if !ban.komap_ready {
+		ban.komap = newKomap(ban)
 	}
 	// 盤面
 	dan := 1
@@ -328,7 +308,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 		suji = 9
 		for suji >= 1 {
 			masu := newMasu(suji, dan)
-			if koma_map[masu] == nil {
+			if ban.komap.all_koma[masu] == nil {
 				// 駒がないマス
 				empty_masu_count++
 			} else {
@@ -338,7 +318,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 					str += fmt.Sprint(empty_masu_count)
 					empty_masu_count = 0
 				}
-				str += koma_map[masu].sfenString()
+				str += ban.komap.all_koma[masu].sfenString()
 			}
 			suji--
 		}
@@ -359,7 +339,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 	// 持ち駒
 	mochi_str := ""
 	for k := KIND_ZERO; k < KIND_NUM; k++ {
-		count := sente_mochigoma[k]
+		count := ban.komap.sente_mochigoma[k]
 		if count > 0 {
 			// S2Pb3pのように表記。（先手銀1歩2、後手角1歩3）
 			// TOOD: 本当は、高い駒から順番に出す仕様があるらしい
@@ -370,7 +350,7 @@ func (ban *Ban) toSFEN(need_tesuu bool) string {
 		}
 	}
 	for k := KIND_ZERO; k < KIND_NUM; k++ {
-		count := gote_mochigoma[k]
+		count := ban.komap.gote_mochigoma[k]
 		if count > 0 {
 			// S2Pb3pのように表記。（先手銀1歩2、後手角1歩3）
 			// TOOD: 本当は、高い駒から順番に出す仕様があるらしい
@@ -409,5 +389,8 @@ func (ban *Ban) dumpMasu() {
 func (ban *Ban) isOute() bool {
 	// TODO 王手がかかっている状態かチェックする実装
 	// 全駒分のBitBoardが必要。
+	if !(ban.komap_ready) {
+		ban.komap = newKomap(ban)
+	}
 	return false
 }

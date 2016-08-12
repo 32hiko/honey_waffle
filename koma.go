@@ -39,16 +39,6 @@ func newKoma(kind KomaKind, teban Teban) *Koma {
 	return &koma
 }
 
-func newKomaWithSujiAndDan(kind KomaKind, teban Teban, suji int, dan int) *Koma {
-	koma := Koma{
-		kind:  kind,
-		teban: teban,
-		suji:  suji,
-		dan:   dan,
-	}
-	return &koma
-}
-
 func promote(kind KomaKind) KomaKind {
 	if promoted(kind) {
 		return kind
