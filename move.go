@@ -1,5 +1,7 @@
 package main
 
+import "reflect"
+
 type Moves struct {
 	moves_map map[int]*Move
 }
@@ -19,9 +21,13 @@ func (moves *Moves) count() int {
 	return len(moves.moves_map)
 }
 
-func (moves *Moves) add(add_moves *Moves) {
+func (moves *Moves) addMove(add_move *Move) {
+	moves.moves_map[moves.count()] = add_move
+}
+
+func (moves *Moves) addMoves(add_moves *Moves) {
 	for _, add_move := range add_moves.moves_map {
-		moves.moves_map[moves.count()] = add_move
+		moves.addMove(add_move)
 	}
 }
 
@@ -55,31 +61,20 @@ func generateAllMoves(ban *Ban) *Moves {
 	for masu, koma := range teban_koma {
 		// 駒の種類別ロジックへ
 		if koma.kind.canFarMove() {
-			moves.add(generateFarMoves(ban, masu, koma))
+			// TODO 駒の種類や、取る、成るといった種類別にするならaddする際に考慮する。
+			moves.addMoves(generateFarMoves(ban, masu, koma))
 		} else {
-			moves.add(generateMoves(ban, masu, koma))
+			moves.addMoves(generateMoves(ban, masu, koma))
 		}
 	}
-	// TODO ピンされている駒は、動かせる方向に制約がある
+	// TODO 自殺手の除外
 	// 打つ手
 	// TODO 空きマスのmapも必要かも
 	return moves
 }
 
 func generateMoves(ban *Ban, masu Masu, koma *Koma) *Moves {
-	kind_kiki := KIKI_GYOKU
-	if koma.kind == FU {
-		kind_kiki = KIKI_FU
-	} else if koma.kind.isKinMove() {
-		kind_kiki = KIKI_KIN
-	} else if koma.kind == KEI {
-		kind_kiki = KIKI_KEI
-	} else if koma.kind == GIN {
-		kind_kiki = KIKI_GIN
-	} else {
-		// 玉。相手の利きのあるマスを避けるのはここでやるかどうか。
-	}
-	return kiki2Moves(ban, masu, kind_kiki)
+	return kiki2Moves(ban, masu, KIKI_ARRAY_OF[koma.kind])
 }
 
 var MOVE_N Masu = newMasu(0, -1)
@@ -101,6 +96,21 @@ var KIKI_JUJI = []Masu{MOVE_N, MOVE_E, MOVE_W, MOVE_S}
 var KIKI_BATU = []Masu{MOVE_NE, MOVE_NW, MOVE_SE, MOVE_SW}
 var KIKI_GYOKU = []Masu{MOVE_N, MOVE_NE, MOVE_NW, MOVE_E, MOVE_W, MOVE_S, MOVE_SE, MOVE_SW}
 
+var KIKI_ARRAY_OF = map[KomaKind][]Masu{
+	FU:      KIKI_FU,
+	KEI:     KIKI_KEI,
+	GIN:     KIKI_GIN,
+	KIN:     KIKI_KIN,
+	GYOKU:   KIKI_GYOKU,
+	TOKIN:   KIKI_KIN,
+	NARIKYO: KIKI_KIN,
+	NARIKEI: KIKI_KIN,
+	NARIGIN: KIKI_KIN,
+	// 王手チェックのために、入れておく
+	UMA: KIKI_GYOKU,
+	RYU: KIKI_GYOKU,
+}
+
 func kiki2Moves(ban *Ban, masu Masu, kiki_arr []Masu) *Moves {
 	moves := newMoves()
 	teban := ban.teban
@@ -114,7 +124,7 @@ func kiki2Moves(ban *Ban, masu Masu, kiki_arr []Masu) *Moves {
 				// 相手の駒があるなら取れる。取るデータをここで保存するか？
 			}
 			move := newMove(masu, to_masu)
-			moves.moves_map[moves.count()] = move
+			moves.addMove(move)
 		}
 	}
 	return moves
@@ -131,10 +141,14 @@ func farKiki2Moves(ban *Ban, masu Masu, far_kiki Masu) *Moves {
 				// 味方の駒があるマスには指せない。また、この先は利きがさえぎられている。
 				break
 			} else {
-				// 相手の駒があるなら取れる。取るデータをここで保存するか？
+				move := newMove(masu, to_masu)
+				moves.addMove(move)
+				if ban.isTebanKomaExists(to_masu, teban.aite()) {
+					// 相手の駒があるなら取れる。取るデータをここで保存するか？
+					// 取ったらループを抜ける
+					break
+				}
 			}
-			move := newMove(base, to_masu)
-			moves.moves_map[moves.count()] = move
 		} else {
 			break
 		}
@@ -146,29 +160,107 @@ func farKiki2Moves(ban *Ban, masu Masu, far_kiki Masu) *Moves {
 func generateFarMoves(ban *Ban, masu Masu, koma *Koma) *Moves {
 	moves := newMoves()
 	if koma.kind == KYO {
-		moves.add(farKiki2Moves(ban, masu, MOVE_N))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_N))
 	} else if koma.kind == KAKU {
-		moves.add(farKiki2Moves(ban, masu, MOVE_NE))
-		moves.add(farKiki2Moves(ban, masu, MOVE_NW))
-		moves.add(farKiki2Moves(ban, masu, MOVE_SE))
-		moves.add(farKiki2Moves(ban, masu, MOVE_SW))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_NE))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_NW))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_SE))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_SW))
 	} else if koma.kind == HI {
-		moves.add(farKiki2Moves(ban, masu, MOVE_N))
-		moves.add(farKiki2Moves(ban, masu, MOVE_E))
-		moves.add(farKiki2Moves(ban, masu, MOVE_W))
-		moves.add(farKiki2Moves(ban, masu, MOVE_S))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_N))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_E))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_W))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_S))
 	} else if koma.kind == UMA {
-		moves.add(farKiki2Moves(ban, masu, MOVE_NE))
-		moves.add(farKiki2Moves(ban, masu, MOVE_NW))
-		moves.add(farKiki2Moves(ban, masu, MOVE_SE))
-		moves.add(farKiki2Moves(ban, masu, MOVE_SW))
-		moves.add(kiki2Moves(ban, masu, KIKI_JUJI))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_NE))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_NW))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_SE))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_SW))
+		moves.addMoves(kiki2Moves(ban, masu, KIKI_JUJI))
 	} else if koma.kind == RYU {
-		moves.add(farKiki2Moves(ban, masu, MOVE_N))
-		moves.add(farKiki2Moves(ban, masu, MOVE_E))
-		moves.add(farKiki2Moves(ban, masu, MOVE_W))
-		moves.add(farKiki2Moves(ban, masu, MOVE_S))
-		moves.add(kiki2Moves(ban, masu, KIKI_BATU))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_N))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_E))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_W))
+		moves.addMoves(farKiki2Moves(ban, masu, MOVE_S))
+		moves.addMoves(kiki2Moves(ban, masu, KIKI_BATU))
 	}
+	return moves
+}
+
+// 王手チェック用
+func getAiteKiki(ban *Ban, masu Masu) *Moves {
+	// 利きの手を入れる（最大で2手までのはず）
+	moves := newMoves()
+
+	// あるマスに相手の利きがあるか？→自分の駒をあるマスに置き、その利き先に相手のその駒があれば、ある。
+	// 冗長になるが、とりあえず１種類ずつチェックしていく。
+	// 王手チェック用なので、相手玉による利きは見ない。
+	kind_arr := []KomaKind{FU, KEI, GIN, KIN, GYOKU}
+	// TODO 盤上にない駒の種類はスキップする
+	for _, kind := range kind_arr {
+		moves.addMoves(getAiteMovesToMasu(ban, masu, KIKI_ARRAY_OF[kind]))
+	}
+	moves.addMoves(getAiteFarMoveToMasu(ban, masu))
+
+	return moves
+}
+
+func getAiteMovesToMasu(ban *Ban, masu Masu, kiki_arr []Masu) *Moves {
+	moves := newMoves()
+	teban := ban.teban
+	for _, kiki_to := range kiki_arr {
+		to_masu := joinMasuByTeban(masu, kiki_to, teban)
+		if to_masu.isValid() {
+			koma, exists := ban.getTebanKomaAtMasu(to_masu, teban.aite())
+			if exists && reflect.DeepEqual(KIKI_ARRAY_OF[koma.kind], kiki_arr) {
+				// 相手の手を入れるのでfrom,toを逆にしている。
+				move := newMove(to_masu, masu)
+				moves.addMove(move)
+			}
+		}
+	}
+	return moves
+}
+
+func getAiteFarMoveToMasu(ban *Ban, masu Masu) *Moves {
+	moves := newMoves()
+	teban := ban.teban
+
+	inner_func := func(far_kiki Masu, kind_arr []KomaKind) {
+		base := masu
+		for {
+			to_masu := joinMasuByTeban(base, far_kiki, teban)
+			if to_masu.isValid() {
+				koma, exists := ban.getTebanKomaAtMasu(to_masu, teban.aite())
+				if exists {
+					for _, kind := range kind_arr {
+						if kind == koma.kind {
+							move := newMove(to_masu, masu)
+							moves.addMove(move)
+							break
+						}
+					}
+					break
+				} else {
+					if ban.isTebanKomaExists(to_masu, teban) {
+						break
+					}
+				}
+			} else {
+				break
+			}
+			base = to_masu
+		}
+		return
+	}
+
+	inner_func(MOVE_N, []KomaKind{KYO, HI, RYU})
+	inner_func(MOVE_E, []KomaKind{HI, RYU})
+	inner_func(MOVE_W, []KomaKind{HI, RYU})
+	inner_func(MOVE_S, []KomaKind{HI, RYU})
+	inner_func(MOVE_NE, []KomaKind{KAKU, UMA})
+	inner_func(MOVE_NW, []KomaKind{KAKU, UMA})
+	inner_func(MOVE_SE, []KomaKind{KAKU, UMA})
+	inner_func(MOVE_SW, []KomaKind{KAKU, UMA})
 	return moves
 }

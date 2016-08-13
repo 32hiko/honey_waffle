@@ -398,17 +398,24 @@ func (ban *Ban) dumpMasu() {
 }
 
 func (ban *Ban) isOute() bool {
-	// TODO 王手がかかっている状態かチェックする実装
-	// 全駒分のBitBoardが必要。
 	if !(ban.komap_ready) {
 		ban.komap = newKomap(ban)
 		ban.komap_ready = true
 	}
-	return false
+	// 自玉のマスを求める
+	teban := ban.teban
+	gyoku_masu := ban.masu[teban][GYOKU][0]
+	return getAiteKiki(ban, gyoku_masu).count() > 0
 }
 
 func (ban *Ban) isTebanKomaExists(masu Masu, teban Teban) bool {
 	teban_koma := ban.getTebanKoma(teban)
 	_, exists := teban_koma[masu]
 	return exists
+}
+
+func (ban *Ban) getTebanKomaAtMasu(masu Masu, teban Teban) (*Koma, bool) {
+	teban_koma := ban.getTebanKoma(teban)
+	koma, exists := teban_koma[masu]
+	return koma, exists
 }
