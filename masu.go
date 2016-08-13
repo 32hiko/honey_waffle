@@ -26,20 +26,22 @@ func plus(a Masu, b Masu) Masu {
 	return newMasu(a.suji+b.suji, a.dan+b.dan)
 }
 
-func checkMasu(suji int, dan int) bool {
+func minus(a Masu, b Masu) Masu {
+	return newMasu(a.suji-b.suji, a.dan-b.dan)
+}
+
+func joinMasuByTeban(a Masu, b Masu, teban Teban) Masu {
+	if teban.isSente() {
+		return plus(a, b)
+	} else {
+		return minus(a, b)
+	}
+}
+
+func (masu Masu) isValid() bool {
+	suji := masu.suji
+	dan := masu.dan
 	return suji > 0 && suji < 10 && dan > 0 && dan < 10
-}
-
-func plusWithCheck(a Masu, b Masu) (Masu, bool) {
-	suji := a.suji + b.suji
-	dan := a.dan + b.dan
-	return newMasu(suji, dan), checkMasu(suji, dan)
-}
-
-func minusWithCheck(a Masu, b Masu) (Masu, bool) {
-	suji := a.suji - b.suji
-	dan := a.dan - b.dan
-	return newMasu(suji, dan), checkMasu(suji, dan)
 }
 
 // test ok
@@ -52,6 +54,7 @@ func str2Masu(str string) Masu {
 }
 
 const DAN2STR string = "0abcdefghi"
+
 func (masu Masu) masu2Str() string {
 	// 77 -> 7g
 	suji := masu.suji

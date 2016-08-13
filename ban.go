@@ -406,3 +406,9 @@ func (ban *Ban) isOute() bool {
 	}
 	return false
 }
+
+func (ban *Ban) isTebanKomaExists(masu Masu, teban Teban) bool {
+	teban_koma := ban.getTebanKoma(teban)
+	_, exists := teban_koma[masu]
+	return exists
+}
