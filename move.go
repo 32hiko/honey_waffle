@@ -73,7 +73,7 @@ func generateAllMoves(ban *Ban) *Moves {
 		}
 	}
 	// TODO 自殺手の除外
-	// 打つ手
+	// TODO 打つ手
 	// TODO 空きマスのmapも必要かも
 	return moves
 }
