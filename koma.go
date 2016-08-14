@@ -88,14 +88,6 @@ func (kind KomaKind) canFarMove() bool {
 	}
 }
 
-func (kind KomaKind) isKinMove() bool {
-	if kind == KIN || kind == TOKIN || kind == NARIKYO || kind == NARIKEI || kind == NARIGIN {
-		return true
-	} else {
-		return false
-	}
-}
-
 func (kind KomaKind) alphabet() string {
 	switch demote(kind) {
 	case FU:
