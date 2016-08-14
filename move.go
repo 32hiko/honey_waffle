@@ -108,7 +108,7 @@ func generateFarMoves(ban *Ban, masu Masu, koma *Koma) *Moves {
 		moves.mergeMoves(farKiki2Moves(ban, masu, MOVE_E, RYU))
 		moves.mergeMoves(farKiki2Moves(ban, masu, MOVE_W, RYU))
 		moves.mergeMoves(farKiki2Moves(ban, masu, MOVE_S, RYU))
-		moves.mergeMoves(kiki2Moves(ban, masu, KIKI_BATU, UMA))
+		moves.mergeMoves(kiki2Moves(ban, masu, KIKI_BATU, RYU))
 	}
 	return moves
 }

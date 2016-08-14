@@ -39,6 +39,14 @@ func (ban *Ban) getTebanKoma(teban Teban) Kmap {
 	}
 }
 
+func (ban *Ban) getTebanKiki(teban Teban) *Kiki {
+	if teban.isSente() {
+		return ban.komap.sente_kiki
+	} else {
+		return ban.komap.gote_kiki
+	}
+}
+
 // test ok
 func newBanFromSFEN(sfen string) *Ban {
 	// 例：lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1
@@ -405,7 +413,9 @@ func (ban *Ban) isOute() bool {
 	// 自玉のマスを求める
 	teban := ban.teban
 	gyoku_masu := ban.masu[teban][GYOKU][0]
-	return getAiteKiki(ban, gyoku_masu).count() > 0
+	// return getAiteKiki(ban, gyoku_masu).count() > 0
+	kiki := ban.getTebanKiki(teban)
+	return kiki.count(gyoku_masu) > 0
 }
 
 func (ban *Ban) isTebanKomaExists(masu Masu, teban Teban) bool {
