@@ -119,6 +119,7 @@ func generateKiki(masu Masu, kiki_arr []Masu, teban Teban) *Kiki {
 	return kiki
 }
 
+// test ok
 func (komap *Komap) generateFarKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
 	kiki := newKiki()
 	if koma.kind == KYO {
@@ -149,13 +150,14 @@ func (komap *Komap) generateFarKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
 	return kiki
 }
 
+// test ok
 func (komap *Komap) farKiki(masu Masu, far_kiki Masu, teban Teban) *Kiki {
 	kiki := newKiki()
 	base := masu
 	for {
 		to_masu := joinMasuByTeban(base, far_kiki, teban)
 		if to_masu.isValid() {
-			kiki.addKiki(masu, []Masu{to_masu})
+			kiki.addKiki(to_masu, []Masu{masu})
 			_, exists := komap.all_koma[to_masu]
 			if exists {
 				break

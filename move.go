@@ -237,7 +237,7 @@ func (move *Move) mustPromote(kind KomaKind, teban Teban) bool {
 	return false
 }
 
-// 王手チェック用
+// komapがなくても使える、王手チェック用。今はどこからも呼ばれない。
 func getAiteKiki(ban *Ban, masu Masu) *Moves {
 	// 利きの手を入れる（最大で2手までのはず）
 	moves := newMoves()
@@ -251,7 +251,6 @@ func getAiteKiki(ban *Ban, masu Masu) *Moves {
 		moves.mergeMoves(getAiteMovesToMasu(ban, masu, KIKI_ARRAY_OF[kind]))
 	}
 	moves.mergeMoves(getAiteFarMoveToMasu(ban, masu))
-
 	return moves
 }
 
