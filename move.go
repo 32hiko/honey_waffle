@@ -51,17 +51,30 @@ func (move *Move) toUSIMove() string {
 func generateAllMoves(ban *Ban) *Moves {
 	// 与えられた盤情報から、全部の合法手を生成する
 	moves := newMoves()
+	teban := ban.teban
 
 	if ban.isOute() {
-		// TODO 王手をかけている駒を取る手 -> isOuteの結果を取っておき、それを元に
+		gyoku_masu := ban.masu[teban][GYOKU][0]
+		aite_kiki := ban.getTebanKiki(teban.aite())
+		// 王手をかけている相手の駒のマス（複数）
+		oute_by := aite_kiki.kiki_map[gyoku_masu]
+		for _, aite_masu := range oute_by {
+			// 自駒のaite_masuへの利き=王手をかけている駒を取る手
+			kiki := ban.getTebanKiki(teban)
+			oute_sosi_by := kiki.kiki_map[aite_masu]
+			for _, masu := range oute_sosi_by {
+				koma := ban.komap.all_koma[masu]
+				moves.addMoves(masu, aite_masu, koma.kind, teban)
+			}
+		}
 		// TODO 合い駒を打つ手、または移動合いの手 -> 同じく。遠利きなら間に入る手を。
 		// TODO 逃げる手
+		// TODO ここでも、自殺手を除外する必要がある。逆に言うと、汎用ロジックでもいいはず
 		return moves
 	}
 	// isOuteでkomapは初期化済
 
 	// 駒を動かす手
-	teban := ban.teban
 	teban_koma := ban.getTebanKoma(teban)
 	for masu, koma := range teban_koma {
 		// 駒の種類別ロジックへ

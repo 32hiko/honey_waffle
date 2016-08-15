@@ -413,8 +413,8 @@ func (ban *Ban) isOute() bool {
 	// 自玉のマスを求める
 	teban := ban.teban
 	gyoku_masu := ban.masu[teban][GYOKU][0]
-	kiki := ban.getTebanKiki(teban.aite())
-	return kiki.count(gyoku_masu) > 0
+	aite_kiki := ban.getTebanKiki(teban.aite())
+	return aite_kiki.count(gyoku_masu) > 0
 }
 
 func (ban *Ban) isTebanKomaExists(masu Masu, teban Teban) bool {
