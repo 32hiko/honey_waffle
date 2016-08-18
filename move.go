@@ -9,6 +9,7 @@ type Moves struct {
 type Move struct {
 	from    Masu
 	to      Masu
+	kind    KomaKind
 	promote bool
 }
 
@@ -32,15 +33,20 @@ func (moves *Moves) mergeMoves(add_moves *Moves) {
 	}
 }
 
-func newMove(from Masu, to Masu) *Move {
+func newMove(from Masu, to Masu, kind KomaKind) *Move {
 	move := Move{
 		from: from,
 		to:   to,
+		kind: kind,
 	}
 	return &move
 }
 
 func (move *Move) toUSIMove() string {
+	if move.from == KOMADAI {
+		// 打つときは、駒の種類はすべて大文字で。
+		return move.kind.alphabet() + "*" + move.to.masu2Str()
+	}
 	base := move.from.masu2Str() + move.to.masu2Str()
 	if move.promote {
 		base += "+"
@@ -58,16 +64,18 @@ func generateAllMoves(ban *Ban) *Moves {
 		aite_kiki := ban.getTebanKiki(teban.aite())
 		// 王手をかけている相手の駒のマス（複数）
 		oute_by := aite_kiki.kiki_map[gyoku_masu]
-		for _, aite_masu := range oute_by {
-			// 自駒のaite_masuへの利き=王手をかけている駒を取る手
-			kiki := ban.getTebanKiki(teban)
-			oute_sosi_by := kiki.kiki_map[aite_masu]
-			for _, masu := range oute_sosi_by {
-				koma := ban.komap.all_koma[masu]
-				moves.addMoves(masu, aite_masu, koma.kind, teban)
+		if len(oute_by) == 1 {
+			for _, aite_masu := range oute_by {
+				// 自駒のaite_masuへの利き=王手をかけている駒を取る手
+				kiki := ban.getTebanKiki(teban)
+				oute_sosi_by := kiki.kiki_map[aite_masu]
+				for _, masu := range oute_sosi_by {
+					koma := ban.komap.all_koma[masu]
+					moves.addMoves(masu, aite_masu, koma.kind, teban)
+				}
 			}
+			// TODO 合い駒を打つ手、または移動合いの手 -> 同じく。遠利きなら間に入る手を。
 		}
-		// TODO 合い駒を打つ手、または移動合いの手 -> 同じく。遠利きなら間に入る手を。
 		// TODO 逃げる手
 		// TODO ここでも、自殺手を除外する必要がある。逆に言うと、汎用ロジックでもいいはず
 		return moves
@@ -87,6 +95,7 @@ func generateAllMoves(ban *Ban) *Moves {
 	}
 	// TODO 自殺手の除外
 	// TODO 打つ手
+	moves.mergeMoves(generateDropMoves(ban))
 	// TODO 空きマスのmapも必要かも
 	return moves
 }
@@ -206,9 +215,9 @@ func farKiki2Moves(ban *Ban, masu Masu, far_kiki Masu, kind KomaKind) *Moves {
 }
 
 func (moves *Moves) addMoves(from Masu, to Masu, kind KomaKind, teban Teban) {
-	move := newMove(from, to)
+	move := newMove(from, to, kind)
 	if move.canPromote(kind, teban) {
-		pro_move := newMove(from, to)
+		pro_move := newMove(from, to, kind)
 		pro_move.promote = true
 		moves.addMove(pro_move)
 	}
@@ -232,25 +241,70 @@ func (move *Move) canPromote(kind KomaKind, teban Teban) bool {
 }
 
 func (move *Move) mustPromote(kind KomaKind, teban Teban) bool {
-	if kind > KEI {
-		return false
-	} else if kind == KEI {
-		if teban.isSente() {
-			return move.to.dan <= 2
-		} else {
-			return move.to.dan >= 8
+	return !canDrop(move.to, kind, teban)
+}
+
+func generateDropMoves(ban *Ban) *Moves {
+	moves := newMoves()
+	teban := ban.teban
+
+	put_kinds := []KomaKind{}
+	mochigoma := ban.getTebanMochigoma(teban)
+	for kind, count := range mochigoma {
+		if count > 0 {
+			put_kinds = append(put_kinds, kind)
 		}
-	} else if kind <= KEI {
-		if teban.isSente() {
-			return move.to.dan == 1
-		} else {
-			return move.to.dan == 9
+	}
+
+	if len(put_kinds) > 0 {
+		for _, kind := range put_kinds {
+			// kind x 空きマスの数だけ打つ手を生成する
+			for _, masu := range ban.komap.aki_masu {
+				if masu == MU {
+					break
+				}
+				if kind == FU && is2Fu(ban, masu, teban) {
+					// 二歩となる手は生成しない
+					continue
+				}
+				if canDrop(masu, kind, teban) {
+					moves.addMove(newMove(KOMADAI, masu, kind))
+				}
+			}
+		}
+	}
+	return moves
+}
+
+func is2Fu(ban *Ban, masu Masu, teban Teban) bool {
+	for _, suji := range ban.getTebanFuSuji(teban) {
+		if masu.suji == suji {
+			return true
 		}
 	}
 	return false
 }
 
-// komapがなくても使える、王手チェック用。今はどこからも呼ばれない。
+func canDrop(masu Masu, kind KomaKind, teban Teban) bool {
+	if kind > KEI {
+		return true
+	} else if kind == KEI {
+		if teban.isSente() {
+			return masu.dan >= 3
+		} else {
+			return masu.dan <= 7
+		}
+	} else {
+		// KYO, FU
+		if teban.isSente() {
+			return masu.dan >= 2
+		} else {
+			return masu.dan <= 8
+		}
+	}
+}
+
+// 以下、komapがなくても使える、王手チェック用。今はどこからも呼ばれない。
 func getAiteKiki(ban *Ban, masu Masu) *Moves {
 	// 利きの手を入れる（最大で2手までのはず）
 	moves := newMoves()
@@ -276,7 +330,7 @@ func getAiteMovesToMasu(ban *Ban, masu Masu, kiki_arr []Masu) *Moves {
 			koma, exists := ban.getTebanKomaAtMasu(to_masu, teban.aite())
 			if exists && reflect.DeepEqual(KIKI_ARRAY_OF[koma.kind], kiki_arr) {
 				// 相手の手を入れるのでfrom,toを逆にしている。
-				move := newMove(to_masu, masu)
+				move := newMove(to_masu, masu, koma.kind)
 				moves.addMove(move)
 			}
 		}
@@ -297,7 +351,7 @@ func getAiteFarMoveToMasu(ban *Ban, masu Masu) *Moves {
 				if exists {
 					for _, kind := range kind_arr {
 						if kind == koma.kind {
-							move := newMove(to_masu, masu)
+							move := newMove(to_masu, masu, kind)
 							moves.addMove(move)
 							break
 						}

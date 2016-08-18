@@ -39,11 +39,27 @@ func (ban *Ban) getTebanKoma(teban Teban) Kmap {
 	}
 }
 
+func (ban *Ban) getTebanMochigoma(teban Teban) Mmap {
+	if teban.isSente() {
+		return ban.komap.sente_mochigoma
+	} else {
+		return ban.komap.gote_mochigoma
+	}
+}
+
 func (ban *Ban) getTebanKiki(teban Teban) *Kiki {
 	if teban.isSente() {
 		return ban.komap.sente_kiki
 	} else {
 		return ban.komap.gote_kiki
+	}
+}
+
+func (ban *Ban) getTebanFuSuji(teban Teban) []int {
+	if teban.isSente() {
+		return ban.komap.sente_fu_suji
+	} else {
+		return ban.komap.gote_fu_suji
 	}
 }
 
