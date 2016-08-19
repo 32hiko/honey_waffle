@@ -75,7 +75,34 @@ func generateAllMoves(ban *Ban) *Moves {
 					moves.addMoves(masu, aite_masu, koma.kind, teban)
 				}
 			}
-			// TODO 合い駒を打つ手、または移動合いの手 -> 同じく。遠利きなら間に入る手を。
+			aite_masu := oute_by[0]
+			aite_koma := ban.komap.all_koma[aite_masu]
+			// 唯一、王手をかけている相手の駒が遠利きなら、合い駒の手を探す
+			if aite_koma.kind.canFarMove() {
+				aida_masu := getBetweenMasu(gyoku_masu, aite_masu)
+				if len(aida_masu) > 0 {
+					kiki := ban.getTebanKiki(teban)
+					mochigoma := ban.getTebanMochigoma(teban)
+					for _, masu := range aida_masu {
+						// 打たないで移動合い
+						aigoma_by := kiki.kiki_map[masu]
+						for _, aigoma_from := range aigoma_by {
+							koma := ban.komap.all_koma[aigoma_from]
+							moves.addMoves(aigoma_from, masu, koma.kind, teban)
+						}
+						// 打つ
+						for kind, count := range mochigoma {
+							if count > 0 {
+								drop_move, ok := generateDropMoveToMasu(ban, masu, kind, teban)
+								if ok {
+									moves.addMove(drop_move)
+								}
+							}
+						}
+					}
+				}
+			}
+
 		}
 		gyoku := ban.komap.all_koma[gyoku_masu]
 		moves.mergeMoves(generateMoves(ban, gyoku_masu, gyoku))
@@ -246,32 +273,32 @@ func generateDropMoves(ban *Ban) *Moves {
 	moves := newMoves()
 	teban := ban.teban
 
-	put_kinds := []KomaKind{}
 	mochigoma := ban.getTebanMochigoma(teban)
 	for kind, count := range mochigoma {
 		if count > 0 {
-			put_kinds = append(put_kinds, kind)
-		}
-	}
-
-	if len(put_kinds) > 0 {
-		for _, kind := range put_kinds {
 			// kind x 空きマスの数だけ打つ手を生成する
 			for _, masu := range ban.komap.aki_masu {
 				if masu == MU {
 					break
 				}
-				if kind == FU && is2Fu(ban, masu, teban) {
-					// 二歩となる手は生成しない
-					continue
-				}
-				if canDrop(masu, kind, teban) {
-					moves.addMove(newMove(KOMADAI, masu, kind))
+				move, ok := generateDropMoveToMasu(ban, masu, kind, teban)
+				if ok {
+					moves.addMove(move)
 				}
 			}
 		}
 	}
 	return moves
+}
+
+func generateDropMoveToMasu(ban *Ban, masu Masu, kind KomaKind, teban Teban) (*Move, bool) {
+	if kind == FU && is2Fu(ban, masu, teban) {
+		return nil, false
+	}
+	if canDrop(masu, kind, teban) {
+		return newMove(KOMADAI, masu, kind), true
+	}
+	return nil, false
 }
 
 func is2Fu(ban *Ban, masu Masu, teban Teban) bool {

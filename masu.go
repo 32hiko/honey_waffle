@@ -44,6 +44,31 @@ func (masu Masu) isValid() bool {
 	return suji > 0 && suji < 10 && dan > 0 && dan < 10
 }
 
+func getBetweenMasu(a, b Masu) []Masu {
+	var between []Masu
+	unit := minus(a, b).getUnit()
+	for masu := plus(b, unit); masu != a; masu = plus(masu, unit) {
+		between = append(between, masu)
+	}
+	return between
+}
+
+func (masu Masu) getUnit() Masu {
+	su := 0
+	if masu.suji > 0 {
+		su = 1
+	} else if masu.suji < 0 {
+		su = -1
+	}
+	du := 0
+	if masu.dan > 0 {
+		du = 1
+	} else if masu.dan < 0 {
+		du = -1
+	}
+	return newMasu(su, du)
+}
+
 // test ok
 func str2Masu(str string) Masu {
 	// 7g -> 77
