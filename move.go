@@ -56,6 +56,7 @@ func (move *Move) toUSIMove() string {
 
 func generateAllMoves(ban *Ban) *Moves {
 	// 与えられた盤情報から、全部の合法手を生成する
+	// TODO 後段で、動かしてみて自殺手を除外する
 	moves := newMoves()
 	teban := ban.teban
 
@@ -76,8 +77,8 @@ func generateAllMoves(ban *Ban) *Moves {
 			}
 			// TODO 合い駒を打つ手、または移動合いの手 -> 同じく。遠利きなら間に入る手を。
 		}
-		// TODO 逃げる手
-		// TODO ここでも、自殺手を除外する必要がある。逆に言うと、汎用ロジックでもいいはず
+		gyoku := ban.komap.all_koma[gyoku_masu]
+		moves.mergeMoves(generateMoves(ban, gyoku_masu, gyoku))
 		return moves
 	}
 	// isOuteでkomapは初期化済
@@ -93,10 +94,7 @@ func generateAllMoves(ban *Ban) *Moves {
 			moves.mergeMoves(generateMoves(ban, masu, koma))
 		}
 	}
-	// TODO 自殺手の除外
-	// TODO 打つ手
 	moves.mergeMoves(generateDropMoves(ban))
-	// TODO 空きマスのmapも必要かも
 	return moves
 }
 
