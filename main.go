@@ -120,8 +120,14 @@ func doGo(command string) {
 	}
 	bestmove, score := player.search()
 	// 仮実装
-	usiResponse("info time 0 depth 1 nodes 1 score cp " + fmt.Sprint(score))
-	usiResponse("bestmove " +bestmove)
+	// usiResponse("info time 1 depth 1 nodes 1 score cp " + fmt.Sprint(score) + " pv" + bestmove) // 表示されない
+	// time.Sleep(1000 * time.Millisecond)
+	usiResponse("info string " + fmt.Sprint(score)) // 読み筋のところに表示された。
+	// time.Sleep(1000 * time.Millisecond)
+	// usiResponse("info nodes 12345 nps 67890") // 表の見出しに表示された。
+	// time.Sleep(1000 * time.Millisecond)
+	usiResponse("info string " + bestmove + " test") // 読み筋のところに表示された。
+	usiResponse("bestmove " + bestmove)
 }
 
 // test ok

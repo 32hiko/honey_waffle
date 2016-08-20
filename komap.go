@@ -191,3 +191,17 @@ func (komap *Komap) farKiki(masu Masu, far_kiki Masu, teban Teban) *Kiki {
 	}
 	return kiki
 }
+
+func (kmap Kmap) count() int {
+	return len(kmap)
+}
+
+func (mmap Mmap) count() int {
+	count := 0
+	for _, c := range mmap {
+		if c > 0 {
+			count += c
+		}
+	}
+	return count
+}

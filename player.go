@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type PlayerConfig struct {
 	btime   int
 	wtime   int
@@ -12,7 +14,8 @@ type Player struct {
 }
 
 func (player *Player) search() (bestmove string, score int) {
-	moves := generateAllMoves(player.master)
+	ban := player.master
+	moves := generateAllMoves(ban)
 	// TODO 入玉してからの宣言勝ち
 	if moves.count() == 0 {
 		bestmove = "resign"
@@ -20,12 +23,47 @@ func (player *Player) search() (bestmove string, score int) {
 		return
 	}
 	// TODO 定跡があればそこから指す
+	// 指す前の評価値
+	teban := ban.teban
+	score = evaluate(ban, teban)
+	index := 0
 	// TODO 普通に探索する
+	master_sfen := ban.toSFEN(true)
+	for i, move := range moves.moves_map {
+		new_ban := newBanFromSFEN(master_sfen)
+		move_sfen := move.toUSIMove()
+		new_ban.applySFENMove(move_sfen)
+		new_ban.komap = newKomap(new_ban)
+		// applyすると相手の手番になるから手番は外で持っておく。
+		new_score := evaluate(new_ban, teban)
+		usiResponse("info string " + fmt.Sprint(new_score) + " pv " + move_sfen)
+		if new_score > score {
+			score = new_score
+			index = i
+		}
+	}
 	// TODO 時間配分
 	// TODO 送信
 	//index := moves.count() - 1 // 2
-	index := 0
 	bestmove = moves.moves_map[index].toUSIMove()
-	score = moves.count()
 	return
+}
+
+func evaluate(ban *Ban, teban Teban) int {
+	// とりあえず仮の評価値を返す
+	teban_koma := ban.getTebanKoma(teban)
+	// 駒の枚数
+	koma_count := teban_koma.count()
+	mochigoma_count := ban.getTebanMochigoma(teban).count()
+
+	dan := 0
+	// 駒の位置
+	for masu := range teban_koma {
+		if teban.isSente() {
+			dan += (9 - masu.dan) * (9 - masu.dan)
+		} else {
+			dan += masu.dan * masu.dan
+		}
+	}
+	return koma_count*100 + mochigoma_count*150 + dan
 }
