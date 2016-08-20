@@ -23,13 +23,18 @@ func (moves *Moves) count() int {
 	return len(moves.moves_map)
 }
 
+// test ok
 func (moves *Moves) addMove(add_move *Move) {
 	moves.moves_map[moves.count()] = add_move
 }
 
-func (moves *Moves) mergeMoves(add_moves *Moves) {
-	for _, add_move := range add_moves.moves_map {
-		moves.addMove(add_move)
+// test ok
+func (moves *Moves) mergeMoves(merge_moves *Moves) {
+	if merge_moves == nil || merge_moves.count() == 0 {
+		return
+	}
+	for i := 0; i < merge_moves.count(); i++ {
+		moves.addMove(merge_moves.moves_map[i])
 	}
 }
 
@@ -42,6 +47,7 @@ func newMove(from Masu, to Masu, kind KomaKind) *Move {
 	return &move
 }
 
+// test ok
 func (move *Move) toUSIMove() string {
 	if move.from == KOMADAI {
 		// 打つときは、駒の種類はすべて大文字で。
@@ -329,7 +335,7 @@ func canDrop(masu Masu, kind KomaKind, teban Teban) bool {
 	}
 }
 
-// 以下、komapがなくても使える、王手チェック用。今はどこからも呼ばれない。
+// 以下、komapがなくても使える、王手チェック用。今はどこからも呼ばれない。→つもりだったが、komap前提の処理になっている。
 func getAiteKiki(ban *Ban, masu Masu) *Moves {
 	// 利きの手を入れる（最大で2手までのはず）
 	moves := newMoves()

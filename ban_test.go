@@ -176,7 +176,7 @@ func TestPlaceKoma(t *testing.T) {
 }
 
 func TestNewBanFromSFEN(t *testing.T) {
-	assert := func(actual string, expected string) {
+	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {
 			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
 		}
@@ -194,7 +194,7 @@ func TestNewBanFromSFEN(t *testing.T) {
 }
 
 func TestApplySFENMove(t *testing.T) {
-	assert := func(actual string, expected string) {
+	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {
 			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
 		}
@@ -215,4 +215,22 @@ func TestApplySFENMove(t *testing.T) {
 		assert(ban.toSFEN(true), "lnsgkg1nl/1r2b2s1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/1B5R1/LNSGKGSNL b - 7")
 	}
 	fmt.Println("TestApplySFENMove ok")
+}
+
+func TestGetTebanKomaAtMasu(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		ban := newBan()
+		ban.placeKoma(newKoma(FU, SENTE), newMasu(5, 5))
+		ban.komap = newKomap(ban)
+		koma, exists := ban.getTebanKomaAtMasu(newMasu(5, 5), SENTE)
+		assert(exists, true)
+		assert(koma.kind, FU)
+		assert(koma.teban, SENTE)
+	}
+	fmt.Println("TestGetTebanKomaAtMasu ok")
 }

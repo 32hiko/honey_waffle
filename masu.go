@@ -22,14 +22,17 @@ func newMasu(suji int, dan int) Masu {
 	return masu
 }
 
+// test ok
 func plus(a Masu, b Masu) Masu {
 	return newMasu(a.suji+b.suji, a.dan+b.dan)
 }
 
+// test ok
 func minus(a Masu, b Masu) Masu {
 	return newMasu(a.suji-b.suji, a.dan-b.dan)
 }
 
+// test ok
 func joinMasuByTeban(a Masu, b Masu, teban Teban) Masu {
 	if teban.isSente() {
 		return plus(a, b)
@@ -38,13 +41,16 @@ func joinMasuByTeban(a Masu, b Masu, teban Teban) Masu {
 	}
 }
 
+// test ok
 func (masu Masu) isValid() bool {
 	suji := masu.suji
 	dan := masu.dan
 	return suji > 0 && suji < 10 && dan > 0 && dan < 10
 }
 
+// test ok
 func getBetweenMasu(a, b Masu) []Masu {
+	// 遠い利きの合い駒判定に使うので、同じライン上にある前提。
 	var between []Masu
 	unit := minus(a, b).getUnit()
 	for masu := plus(b, unit); masu != a; masu = plus(masu, unit) {
@@ -53,6 +59,7 @@ func getBetweenMasu(a, b Masu) []Masu {
 	return between
 }
 
+// test ok
 func (masu Masu) getUnit() Masu {
 	su := 0
 	if masu.suji > 0 {

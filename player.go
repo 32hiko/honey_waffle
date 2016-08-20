@@ -14,7 +14,6 @@ type Player struct {
 func (player *Player) search() (bestmove string, score int) {
 	moves := generateAllMoves(player.master)
 	// TODO 入玉してからの宣言勝ち
-	// TODO こちらの合法手がない場合、投了
 	if moves.count() == 0 {
 		bestmove = "resign"
 		score = 0
