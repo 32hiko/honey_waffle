@@ -13,12 +13,12 @@ func TestNewKomap(t *testing.T) {
 	}
 	{
 		ban := newBanFromSFEN(SFEN_STARTPOS)
-		assert(ban.isOute(), false)
+		assert(ban.isOute(SENTE), false)
 	}
 	{
 		sfen := "lnsgkgnl/1r5b1/pppppp+Bpp//9/9/9/PPPPPPPPP/7R1/LNSGKGSNL w P 123"
 		ban := newBanFromSFEN(sfen)
-		assert(ban.isOute(), true)
+		assert(ban.isOute(GOTE), true)
 	}
 	fmt.Println("TestNewKomap ok")
 }

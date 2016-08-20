@@ -25,15 +25,26 @@ func (player *Player) search() (bestmove string, score int) {
 	// TODO 定跡があればそこから指す
 	// 指す前の評価値
 	teban := ban.teban
-	score = evaluate(ban, teban)
-	index := 0
+	is_oute := ban.isOute(teban)
+	if is_oute {
+		score = 0
+	} else {
+		score = evaluate(ban, teban)
+	}
+	usiResponse("info string null_move_score: " + fmt.Sprint(score))
+	index := -1
 	// TODO 普通に探索する
 	master_sfen := ban.toSFEN(true)
+	// TODO 1手指して戻す、を高速に実現できるようにする。
 	for i, move := range moves.moves_map {
 		new_ban := newBanFromSFEN(master_sfen)
 		move_sfen := move.toUSIMove()
 		new_ban.applySFENMove(move_sfen)
 		new_ban.komap = newKomap(new_ban)
+		// ここで自玉が王手になっていないか確認する=自殺手の除去
+		if new_ban.isOute(teban) {
+			continue
+		}
 		// applyすると相手の手番になるから手番は外で持っておく。
 		new_score := evaluate(new_ban, teban)
 		usiResponse("info string " + fmt.Sprint(new_score) + " pv " + move_sfen)
@@ -44,7 +55,12 @@ func (player *Player) search() (bestmove string, score int) {
 	}
 	// TODO 時間配分
 	// TODO 送信
-	//index := moves.count() - 1 // 2
+	if index == -1 {
+		// 合法手がなくなった場合、詰み
+		bestmove = "resign"
+		score = 0
+		return
+	}
 	bestmove = moves.moves_map[index].toUSIMove()
 	return
 }

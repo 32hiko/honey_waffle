@@ -66,7 +66,7 @@ func generateAllMoves(ban *Ban) *Moves {
 	moves := newMoves()
 	teban := ban.teban
 
-	if ban.isOute() {
+	if ban.isOute(teban) {
 		gyoku_masu := ban.masu[teban][GYOKU][0]
 		aite_kiki := ban.getTebanKiki(teban.aite())
 		// 王手をかけている相手の駒のマス（複数）

@@ -421,13 +421,12 @@ func (ban *Ban) dumpMasu() {
 	}
 }
 
-func (ban *Ban) isOute() bool {
+func (ban *Ban) isOute(teban Teban) bool {
 	if !(ban.komap_ready) {
 		ban.komap = newKomap(ban)
 		ban.komap_ready = true
 	}
 	// 自玉のマスを求める
-	teban := ban.teban
 	gyoku_masu := ban.masu[teban][GYOKU][0]
 	aite_kiki := ban.getTebanKiki(teban.aite())
 	return aite_kiki.count(gyoku_masu) > 0
