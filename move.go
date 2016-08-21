@@ -85,28 +85,7 @@ func generateAllMoves(ban *Ban) *Moves {
 			aite_koma := ban.komap.all_koma[aite_masu]
 			// 唯一、王手をかけている相手の駒が遠利きなら、合い駒の手を探す
 			if aite_koma.kind.canFarMove() {
-				aida_masu := getBetweenMasu(gyoku_masu, aite_masu)
-				if len(aida_masu) > 0 {
-					kiki := ban.getTebanKiki(teban)
-					mochigoma := ban.getTebanMochigoma(teban)
-					for _, masu := range aida_masu {
-						// 打たないで移動合い
-						aigoma_by := kiki.kiki_map[masu]
-						for _, aigoma_from := range aigoma_by {
-							koma := ban.komap.all_koma[aigoma_from]
-							moves.addMoves(aigoma_from, masu, koma.kind, teban)
-						}
-						// 打つ
-						for kind, count := range mochigoma {
-							if count > 0 {
-								drop_move, ok := generateDropMoveToMasu(ban, masu, kind, teban)
-								if ok {
-									moves.addMove(drop_move)
-								}
-							}
-						}
-					}
-				}
+				moves.mergeMoves(generateAigomaMoves(ban, gyoku_masu, aite_masu, teban))
 			}
 
 		}
@@ -333,6 +312,33 @@ func canDrop(masu Masu, kind KomaKind, teban Teban) bool {
 			return masu.dan <= 8
 		}
 	}
+}
+
+func generateAigomaMoves(ban *Ban, gyoku_masu, aite_masu Masu, teban Teban) *Moves {
+	moves := newMoves()
+	aida_masu := getBetweenMasu(gyoku_masu, aite_masu)
+	if len(aida_masu) > 0 {
+		kiki := ban.getTebanKiki(teban)
+		mochigoma := ban.getTebanMochigoma(teban)
+		for _, masu := range aida_masu {
+			// 打たないで移動合い
+			aigoma_by := kiki.kiki_map[masu]
+			for _, aigoma_from := range aigoma_by {
+				koma := ban.komap.all_koma[aigoma_from]
+				moves.addMoves(aigoma_from, masu, koma.kind, teban)
+			}
+			// 打つ
+			for kind, count := range mochigoma {
+				if count > 0 {
+					drop_move, ok := generateDropMoveToMasu(ban, masu, kind, teban)
+					if ok {
+						moves.addMove(drop_move)
+					}
+				}
+			}
+		}
+	}
+	return moves
 }
 
 // 以下、komapがなくても使える、王手チェック用。今はどこからも呼ばれない。→つもりだったが、komap前提の処理になっている。

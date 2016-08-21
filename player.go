@@ -37,17 +37,7 @@ func (player *Player) search() (bestmove string, score int) {
 	master_sfen := ban.toSFEN(true)
 	// TODO 1手指して戻す、を高速に実現できるようにする。
 	for i, move := range moves.moves_map {
-		new_ban := newBanFromSFEN(master_sfen)
-		move_sfen := move.toUSIMove()
-		new_ban.applySFENMove(move_sfen)
-		new_ban.komap = newKomap(new_ban)
-		// ここで自玉が王手になっていないか確認する=自殺手の除去
-		if new_ban.isOute(teban) {
-			continue
-		}
-		// applyすると相手の手番になるから手番は外で持っておく。
-		new_score := evaluate(new_ban, teban)
-		usiResponse("info string " + fmt.Sprint(new_score) + " pv " + move_sfen)
+		new_score := doSearch(master_sfen, move, teban, 1)
 		if new_score > score {
 			score = new_score
 			index = i
@@ -63,6 +53,24 @@ func (player *Player) search() (bestmove string, score int) {
 	}
 	bestmove = moves.moves_map[index].toUSIMove()
 	return
+}
+
+func doSearch(base_sfen string, move *Move, teban Teban, depth int) int {
+	ban := newBanFromSFEN(base_sfen)
+	move_sfen := move.toUSIMove()
+	ban.applySFENMove(move_sfen)
+	ban.komap = newKomap(ban)
+	// ここで自玉が王手になっていないか確認する=自殺手の除去
+	if ban.isOute(teban) {
+		return -999
+	}
+	// applyすると相手の手番になるから手番は外で持っておく。
+	depth -= 1
+	score := evaluate(ban, teban)
+	// TODO 評価値出したら、局面と評価値、深さをペアにして保存する
+	// TODO 局面から、相手の手を全部生成してそれぞれにまたdoSearchをよぶ
+	usiResponse("info string " + fmt.Sprint(score) + " pv " + move_sfen)
+	return score
 }
 
 func evaluate(ban *Ban, teban Teban) int {
