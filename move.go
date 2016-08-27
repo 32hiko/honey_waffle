@@ -1,7 +1,5 @@
 package main
 
-import "reflect"
-
 type Moves struct {
 	moves_map map[int]*Move
 }
@@ -362,85 +360,5 @@ func generateAigomaMoves(ban *Ban, gyoku_masu, aite_masu Masu, teban Teban) *Mov
 			}
 		}
 	}
-	return moves
-}
-
-// 以下、komapがなくても使える、王手チェック用。今はどこからも呼ばれない。→つもりだったが、komap前提の処理になっている。
-func getAiteKiki(ban *Ban, masu Masu) *Moves {
-	// 利きの手を入れる（最大で2手までのはず）
-	moves := newMoves()
-
-	// あるマスに相手の利きがあるか？→自分の駒をあるマスに置き、その利き先に相手のその駒があれば、ある。
-	// 冗長になるが、とりあえず１種類ずつチェックしていく。
-	// 王手チェック用なので、相手玉による利きは見ない。
-	kind_arr := []KomaKind{FU, KEI, GIN, KIN, GYOKU}
-	// TODO 盤上にない駒の種類はスキップする
-	for _, kind := range kind_arr {
-		moves.mergeMoves(getAiteMovesToMasu(ban, masu, KIKI_ARRAY_OF[kind]))
-	}
-	moves.mergeMoves(getAiteFarMoveToMasu(ban, masu))
-	return moves
-}
-
-// getAiteKikiでしか使用しない。
-func getAiteMovesToMasu(ban *Ban, masu Masu, kiki_arr []Masu) *Moves {
-	moves := newMoves()
-	teban := ban.teban
-	for _, kiki_to := range kiki_arr {
-		to_masu := joinMasuByTeban(masu, kiki_to, teban)
-		if to_masu.isValid() {
-			koma, exists := ban.getTebanKomaAtMasu(to_masu, teban.aite())
-			if exists && reflect.DeepEqual(KIKI_ARRAY_OF[koma.kind], kiki_arr) {
-				// 相手の手を入れるのでfrom,toを逆にしている。
-				move := newMove(to_masu, masu, koma.kind)
-				moves.addMove(move)
-			}
-		}
-	}
-	return moves
-}
-
-// getAiteKikiでしか使用しない。
-func getAiteFarMoveToMasu(ban *Ban, masu Masu) *Moves {
-	moves := newMoves()
-	teban := ban.teban
-
-	inner_func := func(far_kiki Masu, kind_arr []KomaKind) {
-		base := masu
-		for {
-			to_masu := joinMasuByTeban(base, far_kiki, teban)
-			if to_masu.isValid() {
-				koma, exists := ban.getTebanKomaAtMasu(to_masu, teban.aite())
-				if exists {
-					for _, kind := range kind_arr {
-						if kind == koma.kind {
-							// 取る駒の情報は現時点では不要。本筋では使用されないので。
-							move := newMove(to_masu, masu, kind)
-							moves.addMove(move)
-							break
-						}
-					}
-					break
-				} else {
-					if ban.isTebanKomaExists(to_masu, teban) {
-						break
-					}
-				}
-			} else {
-				break
-			}
-			base = to_masu
-		}
-		return
-	}
-
-	inner_func(MOVE_N, []KomaKind{KYO, HI, RYU})
-	inner_func(MOVE_E, []KomaKind{HI, RYU})
-	inner_func(MOVE_W, []KomaKind{HI, RYU})
-	inner_func(MOVE_S, []KomaKind{HI, RYU})
-	inner_func(MOVE_NE, []KomaKind{KAKU, UMA})
-	inner_func(MOVE_NW, []KomaKind{KAKU, UMA})
-	inner_func(MOVE_SE, []KomaKind{KAKU, UMA})
-	inner_func(MOVE_SW, []KomaKind{KAKU, UMA})
 	return moves
 }
