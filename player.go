@@ -34,7 +34,7 @@ func (player *Player) search() (bestmove string, score int) {
 	for i, move := range moves.moves_map {
 		next_ban := newBanFromSFEN(base_sfen)
 		next_ban.applySFENMove(move.toUSIMove())
-		next_ban.komap = newKomap(next_ban)
+		next_ban.createKomap()
 		if next_ban.isOute(teban) {
 			// ここでの王手は自殺手を意味する。評価できない。
 			continue
@@ -96,7 +96,7 @@ func doSearch(base_sfen string, move *Move, teban Teban, depth int) int {
 	ban := newBanFromSFEN(base_sfen)
 	move_sfen := move.toUSIMove()
 	ban.applySFENMove(move_sfen)
-	ban.komap = newKomap(ban)
+	ban.createKomap()
 	// ここで自玉が王手になっていないか確認する=自殺手の除去
 	if ban.isOute(teban) {
 		return -999

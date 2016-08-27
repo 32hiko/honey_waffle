@@ -64,3 +64,38 @@ func TestToUSIMove(t *testing.T) {
 	}
 	fmt.Println("TestToUSIMove ok")
 }
+
+func TestGenerateAigomaMoves(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		// 打つ手
+		ban := newBan()
+		gyoku_masu := newMasu(5, 9)
+		ban.placeKoma(newKoma(GYOKU, SENTE), gyoku_masu)
+		hi_masu := newMasu(5, 3)
+		ban.placeKoma(newKoma(HI, GOTE), hi_masu)
+		ban.masu[SENTE][FU][0] = KOMADAI
+		ban.createKomap()
+		moves := generateAigomaMoves(ban, gyoku_masu, hi_masu, SENTE)
+		assert(moves.count(), 5)
+	}
+	{
+		ban := newBan()
+		gyoku_masu := newMasu(5, 9)
+		ban.placeKoma(newKoma(GYOKU, SENTE), gyoku_masu)
+		kaku_masu := newMasu(1, 5)
+		ban.placeKoma(newKoma(KAKU, GOTE), kaku_masu)
+		kin_masu := newMasu(3, 8)
+		ban.placeKoma(newKoma(KIN, SENTE), kin_masu)
+		kyo_masu := newMasu(2, 8)
+		ban.placeKoma(newKoma(KYO, SENTE), kyo_masu)
+		ban.createKomap()
+		moves := generateAigomaMoves(ban, gyoku_masu, kaku_masu, SENTE)
+		assert(moves.count(), 3)
+	}
+	fmt.Println("TestGenerateAigomaMoves ok")
+}

@@ -226,7 +226,7 @@ func TestGetTebanKomaAtMasu(t *testing.T) {
 	{
 		ban := newBan()
 		ban.placeKoma(newKoma(FU, SENTE), newMasu(5, 5))
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 		koma, exists := ban.getTebanKomaAtMasu(newMasu(5, 5), SENTE)
 		assert(exists, true)
 		assert(koma.kind, FU)

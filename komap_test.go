@@ -147,7 +147,7 @@ func TestFarKiki(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 
 		masu52 := newMasu(5, 2)
 		fu := newKoma(FU, GOTE)
@@ -164,7 +164,7 @@ func TestFarKiki(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 
 		masu67 := newMasu(6, 7)
 		fu := newKoma(FU, SENTE)
@@ -190,7 +190,7 @@ func TestGenerateFarKiki(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 
 		kiki := ban.komap.generateFarKiki(newMasu(2, 9), newKoma(KYO, SENTE), SENTE)
 		assert(kiki.count(newMasu(2, 1)), 1)
@@ -205,7 +205,7 @@ func TestGenerateFarKiki(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 
 		kiki := ban.komap.generateFarKiki(newMasu(7, 7), newKoma(KAKU, SENTE), SENTE)
 		assert(kiki.count(newMasu(1, 1)), 1)
@@ -224,7 +224,7 @@ func TestGenerateFarKiki(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 
 		kiki := ban.komap.generateFarKiki(newMasu(8, 5), newKoma(HI, GOTE), GOTE)
 		assert(kiki.count(newMasu(8, 1)), 1)
@@ -247,7 +247,7 @@ func TestGenerateFarKiki(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 		ban.komap.all_koma[newMasu(7, 2)] = newKoma(GYOKU, GOTE)
 		ban.komap.all_koma[newMasu(3, 2)] = newKoma(HI, GOTE)
 		ban.komap.all_koma[newMasu(7, 6)] = newKoma(KIN, SENTE)
@@ -276,7 +276,7 @@ func TestGenerateFarKiki(t *testing.T) {
 	}
 	{
 		ban := newBan()
-		ban.komap = newKomap(ban)
+		ban.createKomap()
 		ban.komap.all_koma[newMasu(6, 2)] = newKoma(GYOKU, GOTE)
 		ban.komap.all_koma[newMasu(6, 4)] = newKoma(HI, GOTE)
 		ban.komap.all_koma[newMasu(8, 3)] = newKoma(KIN, SENTE)

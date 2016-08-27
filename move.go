@@ -336,6 +336,7 @@ func canDrop(masu Masu, kind KomaKind, teban Teban) bool {
 	}
 }
 
+// test ok
 func generateAigomaMoves(ban *Ban, gyoku_masu, aite_masu Masu, teban Teban) *Moves {
 	moves := newMoves()
 	aida_masu := getBetweenMasu(gyoku_masu, aite_masu)
@@ -347,7 +348,9 @@ func generateAigomaMoves(ban *Ban, gyoku_masu, aite_masu Masu, teban Teban) *Mov
 			aigoma_by := kiki.kiki_map[masu]
 			for _, aigoma_from := range aigoma_by {
 				koma := ban.komap.all_koma[aigoma_from]
-				moves.addMoves(aigoma_from, masu, koma.kind, teban)
+				if koma.kind != GYOKU {
+					moves.addMoves(aigoma_from, masu, koma.kind, teban)
+				}
 			}
 			// 打つ
 			for kind, count := range mochigoma {

@@ -31,6 +31,11 @@ func newBan() *Ban {
 	return &new_ban
 }
 
+func (ban *Ban) createKomap() {
+	ban.komap = newKomap(ban)
+	ban.komap_ready = true
+}
+
 func (ban *Ban) getTebanKoma(teban Teban) Kmap {
 	if teban.isSente() {
 		return ban.komap.sente_koma
@@ -332,8 +337,7 @@ func (ban *Ban) setSFENMochigoma(sfen_mochigoma string) {
 func (ban *Ban) toSFEN(need_tesuu bool) string {
 	str := ""
 	if !ban.komap_ready {
-		ban.komap = newKomap(ban)
-		ban.komap_ready = true
+		ban.createKomap()
 	}
 	// 盤面
 	dan := 1
@@ -423,8 +427,7 @@ func (ban *Ban) dumpMasu() {
 
 func (ban *Ban) isOute(teban Teban) bool {
 	if !(ban.komap_ready) {
-		ban.komap = newKomap(ban)
-		ban.komap_ready = true
+		ban.createKomap()
 	}
 	// 自玉のマスを求める
 	gyoku_masu := ban.masu[teban][GYOKU][0]
