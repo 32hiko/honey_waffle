@@ -14,6 +14,18 @@ type Masu struct {
 var MU Masu = Masu{0, 0}
 var KOMADAI Masu = Masu{10, 10}
 
+var ALL_MASU = []Masu{
+	newMasu(1, 1), newMasu(1, 2), newMasu(1, 3), newMasu(1, 4), newMasu(1, 5), newMasu(1, 6), newMasu(1, 7), newMasu(1, 8), newMasu(1, 9),
+	newMasu(2, 1), newMasu(2, 2), newMasu(2, 3), newMasu(2, 4), newMasu(2, 5), newMasu(2, 6), newMasu(2, 7), newMasu(2, 8), newMasu(2, 9),
+	newMasu(3, 1), newMasu(3, 2), newMasu(3, 3), newMasu(3, 4), newMasu(3, 5), newMasu(3, 6), newMasu(3, 7), newMasu(3, 8), newMasu(3, 9),
+	newMasu(4, 1), newMasu(4, 2), newMasu(4, 3), newMasu(4, 4), newMasu(4, 5), newMasu(4, 6), newMasu(4, 7), newMasu(4, 8), newMasu(4, 9),
+	newMasu(5, 1), newMasu(5, 2), newMasu(5, 3), newMasu(5, 4), newMasu(5, 5), newMasu(5, 6), newMasu(5, 7), newMasu(5, 8), newMasu(5, 9),
+	newMasu(6, 1), newMasu(6, 2), newMasu(6, 3), newMasu(6, 4), newMasu(6, 5), newMasu(6, 6), newMasu(6, 7), newMasu(6, 8), newMasu(6, 9),
+	newMasu(7, 1), newMasu(7, 2), newMasu(7, 3), newMasu(7, 4), newMasu(7, 5), newMasu(7, 6), newMasu(7, 7), newMasu(7, 8), newMasu(7, 9),
+	newMasu(8, 1), newMasu(8, 2), newMasu(8, 3), newMasu(8, 4), newMasu(8, 5), newMasu(8, 6), newMasu(8, 7), newMasu(8, 8), newMasu(8, 9),
+	newMasu(9, 1), newMasu(9, 2), newMasu(9, 3), newMasu(9, 4), newMasu(9, 5), newMasu(9, 6), newMasu(9, 7), newMasu(9, 8), newMasu(9, 9),
+}
+
 func newMasu(suji int, dan int) Masu {
 	masu := Masu{
 		suji: suji,

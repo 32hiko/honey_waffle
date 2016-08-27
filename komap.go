@@ -22,7 +22,6 @@ type Komap struct {
 	gote_mochigoma  Mmap
 	sente_kiki      *Kiki
 	gote_kiki       *Kiki
-	aki_masu        []Masu
 	sente_fu_suji   []int
 	gote_fu_suji    []int
 }
@@ -37,7 +36,6 @@ func newKomap(ban *Ban) *Komap {
 		gote_mochigoma:  make(Mmap),
 		sente_kiki:      newKiki(),
 		gote_kiki:       newKiki(),
-		aki_masu:        make([]Masu, 81),
 	}
 	// 先手の駒
 	for k := KIND_ZERO; k < KIND_NUM; k++ {
@@ -66,20 +64,15 @@ func newKomap(ban *Ban) *Komap {
 		}
 	}
 	// 空きマス
-	for suji := 1; suji < 10; suji++ {
-		for dan := 1; dan < 10; dan++ {
-			masu := newMasu(suji, dan)
-			koma, exists := komap.all_koma[masu]
-			if exists {
-				if koma.kind == FU {
-					if koma.teban.isSente() {
-						komap.sente_fu_suji = append(komap.sente_fu_suji, suji)
-					} else {
-						komap.gote_fu_suji = append(komap.gote_fu_suji, suji)
-					}
+	for _, masu := range ALL_MASU {
+		koma, exists := komap.all_koma[masu]
+		if exists {
+			if koma.kind == FU {
+				if koma.teban.isSente() {
+					komap.sente_fu_suji = append(komap.sente_fu_suji, masu.suji)
+				} else {
+					komap.gote_fu_suji = append(komap.gote_fu_suji, masu.suji)
 				}
-			} else {
-				komap.aki_masu = append(komap.aki_masu, masu)
 			}
 		}
 	}

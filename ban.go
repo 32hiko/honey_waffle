@@ -435,7 +435,7 @@ func (ban *Ban) isOute(teban Teban) bool {
 	return aite_kiki.count(gyoku_masu) > 0
 }
 
-func (ban *Ban) isTebanKomaExists(masu Masu, teban Teban) bool {
+func (ban *Ban) isTebanKomaExistsAt(masu Masu, teban Teban) bool {
 	teban_koma := ban.getTebanKoma(teban)
 	_, exists := teban_koma[masu]
 	return exists
@@ -445,4 +445,9 @@ func (ban *Ban) getTebanKomaAtMasu(masu Masu, teban Teban) (*Koma, bool) {
 	teban_koma := ban.getTebanKoma(teban)
 	koma, exists := teban_koma[masu]
 	return koma, exists
+}
+
+func (ban *Ban) isKomaExistsAt(masu Masu) bool {
+	_, exists := ban.komap.all_koma[masu]
+	return exists
 }

@@ -183,7 +183,7 @@ func kiki2Moves(ban *Ban, masu Masu, kiki_arr []Masu, kind KomaKind) *Moves {
 	for _, kiki_to := range kiki_arr {
 		to_masu := joinMasuByTeban(masu, kiki_to, teban)
 		if to_masu.isValid() {
-			if ban.isTebanKomaExists(to_masu, teban) {
+			if ban.isTebanKomaExistsAt(to_masu, teban) {
 				// 味方の駒があるマスには指せない
 				continue
 			} else {
@@ -207,7 +207,7 @@ func farKiki2Moves(ban *Ban, masu Masu, far_kiki Masu, kind KomaKind) *Moves {
 	for {
 		to_masu := joinMasuByTeban(base, far_kiki, teban)
 		if to_masu.isValid() {
-			if ban.isTebanKomaExists(to_masu, teban) {
+			if ban.isTebanKomaExistsAt(to_masu, teban) {
 				// 味方の駒があるマスには指せない。また、この先は利きがさえぎられている。
 				break
 			} else {
@@ -283,13 +283,14 @@ func generateDropMoves(ban *Ban) *Moves {
 	for kind, count := range mochigoma {
 		if count > 0 {
 			// kind x 空きマスの数だけ打つ手を生成する
-			for _, masu := range ban.komap.aki_masu {
-				if masu == MU {
-					break
-				}
-				move, ok := generateDropMoveToMasu(ban, masu, kind, teban)
-				if ok {
-					moves.addMove(move)
+			for _, masu := range ALL_MASU {
+				if ban.isKomaExistsAt(masu) {
+					// 駒があるマスには当然打てない
+				} else {
+					move, ok := generateDropMoveToMasu(ban, masu, kind, teban)
+					if ok {
+						moves.addMove(move)
+					}
 				}
 			}
 		}

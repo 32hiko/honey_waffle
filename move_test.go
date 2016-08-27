@@ -65,6 +65,30 @@ func TestToUSIMove(t *testing.T) {
 	fmt.Println("TestToUSIMove ok")
 }
 
+func TestGenerateDropMoves(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		// 持ち駒なし
+		ban := newBan()
+		ban.createKomap()
+		moves := generateDropMoves(ban)
+		assert(moves.count(), 0)
+	}
+	{
+		// 全部のマスに打てる
+		ban := newBan()
+		ban.masu[SENTE][GIN][0] = KOMADAI
+		ban.createKomap()
+		moves := generateDropMoves(ban)
+		assert(moves.count(), 81)
+	}
+	fmt.Println("TestGenerateDropMoves ok")
+}
+
 func TestIs2Fu(t *testing.T) {
 	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {

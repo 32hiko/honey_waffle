@@ -87,7 +87,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	}
 	// 暫定的に、打つ手を評価してみる
 	if move.from == KOMADAI {
-		score = int(move.kind * 10)
+		score = int((move.kind + 1) * 10)
 	}
 	return
 }
