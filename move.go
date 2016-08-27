@@ -62,7 +62,6 @@ func (move *Move) toUSIMove() string {
 
 func generateAllMoves(ban *Ban) *Moves {
 	// 与えられた盤情報から、全部の合法手を生成する
-	// TODO 後段で、動かしてみて自殺手を除外する
 	moves := newMoves()
 	teban := ban.teban
 
