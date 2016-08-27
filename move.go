@@ -307,6 +307,7 @@ func generateDropMoveToMasu(ban *Ban, masu Masu, kind KomaKind, teban Teban) (*M
 	return nil, false
 }
 
+// test ok
 func is2Fu(ban *Ban, masu Masu, teban Teban) bool {
 	for _, suji := range ban.getTebanFuSuji(teban) {
 		if masu.suji == suji {
@@ -316,6 +317,7 @@ func is2Fu(ban *Ban, masu Masu, teban Teban) bool {
 	return false
 }
 
+// test ok
 func canDrop(masu Masu, kind KomaKind, teban Teban) bool {
 	if kind > KEI {
 		return true
