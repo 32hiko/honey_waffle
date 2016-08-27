@@ -25,10 +25,10 @@ func (player *Player) search() (bestmove string, score int) {
 	// TODO 定跡があればそこから指す
 
 	// depth 2で読むのがこのブロック。
-	base_score := 0
+	base_score := -999
 	base_sfen := ban.toSFEN(true)
 	teban := ban.teban
-	score = 0
+	score = -999
 	index := -1
 	// TODO 1手指して戻す、を高速に実現できるようにする。
 	for i, move := range moves.moves_map {
@@ -77,6 +77,18 @@ func (player *Player) search() (bestmove string, score int) {
 
 func evaluateMove(ban *Ban, move *Move) (score int) {
 	score = 0
+	// 駒を取る手は駒の価値分加算する
+	if move.cap_kind != NO_KIND {
+		score = int((move.cap_kind + 1) * 100)
+	}
+	// 成る手を評価する
+	if move.promote {
+		score += 100
+	}
+	// 暫定的に、打つ手を評価してみる
+	if move.from == KOMADAI {
+		score = int(move.kind * 10)
+	}
 	return
 }
 

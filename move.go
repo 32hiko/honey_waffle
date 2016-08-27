@@ -7,10 +7,11 @@ type Moves struct {
 }
 
 type Move struct {
-	from    Masu
-	to      Masu
-	kind    KomaKind
-	promote bool
+	from     Masu
+	to       Masu
+	kind     KomaKind
+	cap_kind KomaKind
+	promote  bool
 }
 
 func newMoves() *Moves {
@@ -40,9 +41,10 @@ func (moves *Moves) mergeMoves(merge_moves *Moves) {
 
 func newMove(from Masu, to Masu, kind KomaKind) *Move {
 	move := Move{
-		from: from,
-		to:   to,
-		kind: kind,
+		from:     from,
+		to:       to,
+		kind:     kind,
+		cap_kind: NO_KIND,
 	}
 	return &move
 }
@@ -72,17 +74,15 @@ func generateAllMoves(ban *Ban) *Moves {
 		// 王手をかけている相手の駒のマス（複数）
 		oute_by := aite_kiki.kiki_map[gyoku_masu]
 		if len(oute_by) == 1 {
-			for _, aite_masu := range oute_by {
-				// 自駒のaite_masuへの利き=王手をかけている駒を取る手
-				kiki := ban.getTebanKiki(teban)
-				oute_sosi_by := kiki.kiki_map[aite_masu]
-				for _, masu := range oute_sosi_by {
-					koma := ban.komap.all_koma[masu]
-					moves.addMoves(masu, aite_masu, koma.kind, teban)
-				}
-			}
 			aite_masu := oute_by[0]
 			aite_koma := ban.komap.all_koma[aite_masu]
+			// 自駒のaite_masuへの利き=王手をかけている駒を取る手
+			kiki := ban.getTebanKiki(teban)
+			oute_sosi_by := kiki.kiki_map[aite_masu]
+			for _, masu := range oute_sosi_by {
+				koma := ban.komap.all_koma[masu]
+				moves.addCaptureMoves(masu, aite_masu, koma.kind, aite_koma.kind, teban)
+			}
 			// 唯一、王手をかけている相手の駒が遠利きなら、合い駒の手を探す
 			if aite_koma.kind.canFarMove() {
 				moves.mergeMoves(generateAigomaMoves(ban, gyoku_masu, aite_masu, teban))
@@ -190,9 +190,14 @@ func kiki2Moves(ban *Ban, masu Masu, kiki_arr []Masu, kind KomaKind) *Moves {
 				// 味方の駒があるマスには指せない
 				continue
 			} else {
-				// 相手の駒があるなら取れる。取るデータをここで保存するか？
+				aite_koma, exists := ban.getTebanKomaAtMasu(to_masu, teban.aite())
+				if exists {
+					// 相手の駒があるなら取れる。取るデータをここで保存する。
+					moves.addCaptureMoves(masu, to_masu, kind, aite_koma.kind, teban)
+				} else {
+					moves.addMoves(masu, to_masu, kind, teban)
+				}
 			}
-			moves.addMoves(masu, to_masu, kind, teban)
 		}
 	}
 	return moves
@@ -209,11 +214,14 @@ func farKiki2Moves(ban *Ban, masu Masu, far_kiki Masu, kind KomaKind) *Moves {
 				// 味方の駒があるマスには指せない。また、この先は利きがさえぎられている。
 				break
 			} else {
-				moves.addMoves(masu, to_masu, kind, teban)
-				if ban.isTebanKomaExists(to_masu, teban.aite()) {
-					// 相手の駒があるなら取れる。取るデータをここで保存するか？
+				aite_koma, exists := ban.getTebanKomaAtMasu(to_masu, teban.aite())
+				if exists {
+					// 相手の駒があるなら取れる。取るデータをここで保存する。
+					moves.addCaptureMoves(masu, to_masu, kind, aite_koma.kind, teban)
 					// 取ったらループを抜ける
 					break
+				} else {
+					moves.addMoves(masu, to_masu, kind, teban)
 				}
 			}
 		} else {
@@ -222,6 +230,22 @@ func farKiki2Moves(ban *Ban, masu Masu, far_kiki Masu, kind KomaKind) *Moves {
 		base = to_masu
 	}
 	return moves
+}
+
+func (moves *Moves) addCaptureMoves(from, to Masu, kind, cap_kind KomaKind, teban Teban) {
+	move := newMove(from, to, kind)
+	if move.canPromote(kind, teban) {
+		pro_move := newMove(from, to, kind)
+		pro_move.promote = true
+		pro_move.cap_kind = cap_kind
+		moves.addMove(pro_move)
+	}
+	if move.mustPromote(kind, teban) {
+		// 成らないといけない場合は成らない手は追加しない
+	} else {
+		move.cap_kind = cap_kind
+		moves.addMove(move)
+	}
 }
 
 func (moves *Moves) addMoves(from Masu, to Masu, kind KomaKind, teban Teban) {
@@ -358,6 +382,7 @@ func getAiteKiki(ban *Ban, masu Masu) *Moves {
 	return moves
 }
 
+// getAiteKikiでしか使用しない。
 func getAiteMovesToMasu(ban *Ban, masu Masu, kiki_arr []Masu) *Moves {
 	moves := newMoves()
 	teban := ban.teban
@@ -375,6 +400,7 @@ func getAiteMovesToMasu(ban *Ban, masu Masu, kiki_arr []Masu) *Moves {
 	return moves
 }
 
+// getAiteKikiでしか使用しない。
 func getAiteFarMoveToMasu(ban *Ban, masu Masu) *Moves {
 	moves := newMoves()
 	teban := ban.teban
@@ -388,6 +414,7 @@ func getAiteFarMoveToMasu(ban *Ban, masu Masu) *Moves {
 				if exists {
 					for _, kind := range kind_arr {
 						if kind == koma.kind {
+							// 取る駒の情報は現時点では不要。本筋では使用されないので。
 							move := newMove(to_masu, masu, kind)
 							moves.addMove(move)
 							break

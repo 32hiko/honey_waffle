@@ -22,6 +22,7 @@ const (
 	KIND_NUM  // 14
 	KIND_ZERO = FU
 	PROMOTE   = 8
+	NO_KIND   = 15
 )
 
 type Koma struct {
