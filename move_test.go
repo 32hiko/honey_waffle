@@ -86,6 +86,18 @@ func TestGenerateDropMoves(t *testing.T) {
 		moves := generateDropMoves(ban)
 		assert(moves.count(), 81)
 	}
+	{
+		// 歩の場合
+		ban := newBan()
+		ban.masu[SENTE][FU][0] = KOMADAI
+		ban.placeKoma(newKoma(FU, SENTE), newMasu(1, 7))
+		ban.placeKoma(newKoma(TOKIN, SENTE), newMasu(2, 3))
+		ban.placeKoma(newKoma(FU, GOTE), newMasu(4, 3))
+		ban.createKomap()
+		moves := generateDropMoves(ban)
+		// 1筋には打てない、2筋には21,23に打てない、4筋には41,43に打てない
+		assert(moves.count(), 0+7+8+7+8+8+8+8+8)
+	}
 	fmt.Println("TestGenerateDropMoves ok")
 }
 

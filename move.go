@@ -275,6 +275,7 @@ func (move *Move) mustPromote(kind KomaKind, teban Teban) bool {
 	return !canDrop(move.to, kind, teban)
 }
 
+// test ok
 func generateDropMoves(ban *Ban) *Moves {
 	moves := newMoves()
 	teban := ban.teban

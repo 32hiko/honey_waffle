@@ -89,5 +89,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	if move.from == KOMADAI {
 		score = int((move.kind + 1) * 10)
 	}
+	// 警告を消す用
+	ban.doNothing()
 	return
 }

@@ -451,3 +451,7 @@ func (ban *Ban) isKomaExistsAt(masu Masu) bool {
 	_, exists := ban.komap.all_koma[masu]
 	return exists
 }
+
+func (ban *Ban) doNothing() {
+
+}
