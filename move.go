@@ -279,6 +279,14 @@ func (move *Move) isDrop() bool {
 	return move.from == KOMADAI
 }
 
+func (move *Move) isForward(teban Teban) bool {
+	if teban.isSente() {
+		return move.to.dan < move.from.dan
+	} else {
+		return move.to.dan > move.from.dan
+	}
+}
+
 // test ok
 func generateDropMoves(ban *Ban) *Moves {
 	moves := newMoves()

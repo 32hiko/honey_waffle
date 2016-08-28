@@ -40,7 +40,7 @@ func (player *Player) search() (bestmove string, score int) {
 			continue
 		}
 		// 評価値テーブルがあるなら、ここで参照する
-		my_move_score := evaluateMove(ban, move)
+		my_move_score := evaluateMove(next_ban, move)
 		if my_move_score < base_score {
 			// 必要なら評価値を保存
 			// 悪くなる手は読まない
@@ -77,6 +77,9 @@ func (player *Player) search() (bestmove string, score int) {
 
 func evaluateMove(ban *Ban, move *Move) (score int) {
 	score = 0
+	// 相手の手番になっているので、自分の手番が相手（ややこしい）
+	teban := ban.teban.aite()
+
 	if move.isDrop() {
 		// 打つ手
 		// 暫定的に、打つ手を評価してみる
@@ -93,7 +96,26 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		}
 	}
 
-	// 警告を消す用
-	ban.doNothing()
+	reverse_kiki := ban.komap.getTebanReverseKiki(teban)
+	// 今の手の利きの数を加算する
+	kiki_masu := reverse_kiki.kiki_map[move.to]
+	score += reverse_kiki.count(move.to)
+	for _, kiki_to := range kiki_masu {
+		koma, exists := ban.komap.all_koma[kiki_to]
+		if exists {
+			if koma.teban == ban.teban {
+				// 相手の駒に当てる手を評価
+				score += int((koma.kind + 1) * 20)
+			}
+		}
+	}
+	// 相手の利きが多いマスへの手は減点する
+	aite_kiki := ban.getTebanKiki(teban.aite())
+	score -= aite_kiki.count(move.to) * 30
+	// 前進する手を評価
+	if move.isForward(teban) {
+		score += 10
+	}
+
 	return
 }
