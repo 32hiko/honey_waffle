@@ -15,27 +15,31 @@ func newKiki() *Kiki {
 }
 
 type Komap struct {
-	all_koma        Kmap
-	sente_koma      Kmap
-	gote_koma       Kmap
-	sente_mochigoma Mmap
-	gote_mochigoma  Mmap
-	sente_kiki      *Kiki
-	gote_kiki       *Kiki
-	sente_fu_suji   []int
-	gote_fu_suji    []int
+	all_koma           Kmap
+	sente_koma         Kmap
+	gote_koma          Kmap
+	sente_mochigoma    Mmap
+	gote_mochigoma     Mmap
+	sente_kiki         *Kiki
+	gote_kiki          *Kiki
+	sente_reverse_kiki *Kiki
+	gote_reverse_kiki  *Kiki
+	sente_fu_suji      []int
+	gote_fu_suji       []int
 }
 
 // test
 func newKomap(ban *Ban) *Komap {
 	komap := Komap{
-		all_koma:        make(Kmap),
-		sente_koma:      make(Kmap),
-		gote_koma:       make(Kmap),
-		sente_mochigoma: make(Mmap),
-		gote_mochigoma:  make(Mmap),
-		sente_kiki:      newKiki(),
-		gote_kiki:       newKiki(),
+		all_koma:           make(Kmap),
+		sente_koma:         make(Kmap),
+		gote_koma:          make(Kmap),
+		sente_mochigoma:    make(Mmap),
+		gote_mochigoma:     make(Mmap),
+		sente_kiki:         newKiki(),
+		gote_kiki:          newKiki(),
+		sente_reverse_kiki: newKiki(),
+		gote_reverse_kiki:  newKiki(),
 	}
 	// 先手の駒
 	for k := KIND_ZERO; k < KIND_NUM; k++ {
@@ -83,7 +87,7 @@ func newKomap(ban *Ban) *Komap {
 		if koma.kind.canFarMove() {
 			komap.sente_kiki.mergeKiki(komap.generateFarKiki(masu, koma, SENTE))
 		} else {
-			komap.sente_kiki.mergeKiki(generateKiki(masu, koma, SENTE))
+			komap.sente_kiki.mergeKiki(komap.generateKiki(masu, koma, SENTE))
 		}
 	}
 	// 後手の利き
@@ -91,7 +95,7 @@ func newKomap(ban *Ban) *Komap {
 		if koma.kind.canFarMove() {
 			komap.gote_kiki.mergeKiki(komap.generateFarKiki(masu, koma, GOTE))
 		} else {
-			komap.gote_kiki.mergeKiki(generateKiki(masu, koma, GOTE))
+			komap.gote_kiki.mergeKiki(komap.generateKiki(masu, koma, GOTE))
 		}
 	}
 	return &komap
@@ -123,12 +127,17 @@ func (kiki Kiki) mergeKiki(to_add *Kiki) {
 }
 
 // test ok
-func generateKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
-	return doGenerateKiki(masu, KIKI_ARRAY_OF[koma.kind], teban)
+func (komap *Komap) generateKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
+	// 利いているマス→駒のいるマスのMapを作る
+	kiki := doGenerateKiki(masu, KIKI_ARRAY_OF[koma.kind], teban)
+	// 駒のいるマス→利いているマスのMapも作る
+	komap.getTebanReverseKiki(teban).mergeKiki(generateReverseKiki(masu, kiki))
+	return kiki
 }
 
 // test ok
 func (komap *Komap) generateFarKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
+	// 利いているマス→駒のいるマスのMapを作る
 	kiki := newKiki()
 	if koma.kind == KYO {
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_N, teban))
@@ -155,7 +164,20 @@ func (komap *Komap) generateFarKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_S, teban))
 		kiki.mergeKiki(doGenerateKiki(masu, KIKI_BATU, teban))
 	}
+	// 駒のいるマス→利いているマスのMapも作る
+	komap.getTebanReverseKiki(teban).mergeKiki(generateReverseKiki(masu, kiki))
 	return kiki
+}
+
+// test ok
+func generateReverseKiki(masu Masu, kiki *Kiki) *Kiki {
+	reverse_kiki := newKiki()
+	to_masu_arr := []Masu{}
+	for to_masu := range kiki.kiki_map {
+		to_masu_arr = append(to_masu_arr, to_masu)
+	}
+	reverse_kiki.addKiki(masu, to_masu_arr)
+	return reverse_kiki
 }
 
 func doGenerateKiki(masu Masu, kiki_arr []Masu, teban Teban) *Kiki {
@@ -187,6 +209,14 @@ func (komap *Komap) farKiki(masu Masu, far_kiki Masu, teban Teban) *Kiki {
 		base = to_masu
 	}
 	return kiki
+}
+
+func (komap *Komap) getTebanReverseKiki(teban Teban) *Kiki {
+	if teban.isSente() {
+		return komap.sente_reverse_kiki
+	} else {
+		return komap.gote_reverse_kiki
+	}
 }
 
 func (kmap Kmap) count() int {

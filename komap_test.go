@@ -89,21 +89,30 @@ func TestGenerateKiki(t *testing.T) {
 	}
 	{
 		masu55 := newMasu(5, 5)
-		kiki := generateKiki(masu55, newKoma(FU, SENTE), SENTE)
+		komap := newKomap(newBan())
+		kiki := komap.generateKiki(masu55, newKoma(FU, SENTE), SENTE)
 		masu54 := newMasu(5, 4)
 		assert(kiki.count(masu54), 1)
+
+		reverse_kiki := komap.getTebanReverseKiki(SENTE)
+		assert(reverse_kiki.count(masu55), 1)
 	}
 	{
 		masu55 := newMasu(5, 5)
-		kiki := generateKiki(masu55, newKoma(KEI, SENTE), SENTE)
+		komap := newKomap(newBan())
+		kiki := komap.generateKiki(masu55, newKoma(KEI, SENTE), SENTE)
 		masu43 := newMasu(4, 3)
 		masu63 := newMasu(6, 3)
 		assert(kiki.count(masu43), 1)
 		assert(kiki.count(masu63), 1)
+
+		reverse_kiki := komap.getTebanReverseKiki(SENTE)
+		assert(reverse_kiki.count(masu55), 2)
 	}
 	{
 		masu55 := newMasu(5, 5)
-		kiki := generateKiki(masu55, newKoma(GIN, GOTE), GOTE)
+		komap := newKomap(newBan())
+		kiki := komap.generateKiki(masu55, newKoma(GIN, GOTE), GOTE)
 		masu44 := newMasu(4, 4)
 		masu46 := newMasu(4, 6)
 		masu56 := newMasu(5, 6)
@@ -114,10 +123,14 @@ func TestGenerateKiki(t *testing.T) {
 		assert(kiki.count(masu56), 1)
 		assert(kiki.count(masu64), 1)
 		assert(kiki.count(masu66), 1)
+
+		reverse_kiki := komap.getTebanReverseKiki(GOTE)
+		assert(reverse_kiki.count(masu55), 5)
 	}
 	{
 		masu55 := newMasu(5, 5)
-		kiki := generateKiki(masu55, newKoma(NARIKEI, SENTE), SENTE)
+		komap := newKomap(newBan())
+		kiki := komap.generateKiki(masu55, newKoma(NARIKEI, SENTE), SENTE)
 		masu44 := newMasu(4, 4)
 		masu45 := newMasu(4, 5)
 		masu54 := newMasu(5, 4)
@@ -130,6 +143,9 @@ func TestGenerateKiki(t *testing.T) {
 		assert(kiki.count(masu56), 1)
 		assert(kiki.count(masu64), 1)
 		assert(kiki.count(masu65), 1)
+
+		reverse_kiki := komap.getTebanReverseKiki(SENTE)
+		assert(reverse_kiki.count(masu55), 6)
 	}
 	fmt.Println("TestGenerateKiki ok")
 }
@@ -197,6 +213,9 @@ func TestGenerateFarKiki(t *testing.T) {
 		assert(kiki.count(newMasu(2, 7)), 1)
 		assert(kiki.count(newMasu(2, 8)), 1)
 		assert(kiki.count(newMasu(2, 9)), 0)
+
+		reverse_kiki := ban.komap.getTebanReverseKiki(SENTE)
+		assert(reverse_kiki.count(newMasu(2, 9)), 8)
 	}
 	{
 		ban := newBan()
@@ -216,6 +235,9 @@ func TestGenerateFarKiki(t *testing.T) {
 		assert(kiki.count(newMasu(8, 6)), 1)
 		assert(kiki.count(newMasu(6, 8)), 1)
 		assert(kiki.count(newMasu(5, 9)), 1)
+
+		reverse_kiki := ban.komap.getTebanReverseKiki(SENTE)
+		assert(reverse_kiki.count(newMasu(7, 7)), 12)
 	}
 	{
 		ban := newBan()
@@ -239,6 +261,9 @@ func TestGenerateFarKiki(t *testing.T) {
 		assert(kiki.count(newMasu(6, 5)), 1)
 		assert(kiki.count(newMasu(7, 5)), 1)
 		assert(kiki.count(newMasu(9, 5)), 1)
+
+		reverse_kiki := ban.komap.getTebanReverseKiki(GOTE)
+		assert(reverse_kiki.count(newMasu(8, 5)), 16)
 	}
 	{
 		ban := newBan()
@@ -268,6 +293,9 @@ func TestGenerateFarKiki(t *testing.T) {
 		assert(kiki.count(newMasu(5, 5)), 1)
 		assert(kiki.count(newMasu(4, 4)), 1)
 		assert(kiki.count(newMasu(6, 4)), 1)
+
+		reverse_kiki := ban.komap.getTebanReverseKiki(GOTE)
+		assert(reverse_kiki.count(newMasu(5, 4)), 12)
 	}
 	{
 		ban := newBan()
@@ -295,6 +323,9 @@ func TestGenerateFarKiki(t *testing.T) {
 		assert(kiki.count(newMasu(5, 4)), 1)
 		assert(kiki.count(newMasu(7, 2)), 1)
 		assert(kiki.count(newMasu(7, 4)), 1)
+
+		reverse_kiki := ban.komap.getTebanReverseKiki(SENTE)
+		assert(reverse_kiki.count(newMasu(6, 3)), 10)
 	}
 	fmt.Println("TestGenerateFarKiki ok")
 }
