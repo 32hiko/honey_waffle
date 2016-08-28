@@ -83,7 +83,7 @@ func newKomap(ban *Ban) *Komap {
 		if koma.kind.canFarMove() {
 			komap.sente_kiki.mergeKiki(komap.generateFarKiki(masu, koma, SENTE))
 		} else {
-			komap.sente_kiki.mergeKiki(generateKiki(masu, KIKI_ARRAY_OF[koma.kind], SENTE))
+			komap.sente_kiki.mergeKiki(generateKiki(masu, koma, SENTE))
 		}
 	}
 	// 後手の利き
@@ -91,7 +91,7 @@ func newKomap(ban *Ban) *Komap {
 		if koma.kind.canFarMove() {
 			komap.gote_kiki.mergeKiki(komap.generateFarKiki(masu, koma, GOTE))
 		} else {
-			komap.gote_kiki.mergeKiki(generateKiki(masu, KIKI_ARRAY_OF[koma.kind], GOTE))
+			komap.gote_kiki.mergeKiki(generateKiki(masu, koma, GOTE))
 		}
 	}
 	return &komap
@@ -123,15 +123,8 @@ func (kiki Kiki) mergeKiki(to_add *Kiki) {
 }
 
 // test ok
-func generateKiki(masu Masu, kiki_arr []Masu, teban Teban) *Kiki {
-	kiki := newKiki()
-	for _, kiki_to := range kiki_arr {
-		to_masu := joinMasuByTeban(masu, kiki_to, teban)
-		if to_masu.isValid() {
-			kiki.addKiki(to_masu, []Masu{masu})
-		}
-	}
-	return kiki
+func generateKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
+	return doGenerateKiki(masu, KIKI_ARRAY_OF[koma.kind], teban)
 }
 
 // test ok
@@ -154,13 +147,24 @@ func (komap *Komap) generateFarKiki(masu Masu, koma *Koma, teban Teban) *Kiki {
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_NW, teban))
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_SE, teban))
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_SW, teban))
-		kiki.mergeKiki(generateKiki(masu, KIKI_JUJI, teban))
+		kiki.mergeKiki(doGenerateKiki(masu, KIKI_JUJI, teban))
 	} else if koma.kind == RYU {
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_N, teban))
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_E, teban))
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_W, teban))
 		kiki.mergeKiki(komap.farKiki(masu, MOVE_S, teban))
-		kiki.mergeKiki(generateKiki(masu, KIKI_BATU, teban))
+		kiki.mergeKiki(doGenerateKiki(masu, KIKI_BATU, teban))
+	}
+	return kiki
+}
+
+func doGenerateKiki(masu Masu, kiki_arr []Masu, teban Teban) *Kiki {
+	kiki := newKiki()
+	for _, kiki_to := range kiki_arr {
+		to_masu := joinMasuByTeban(masu, kiki_to, teban)
+		if to_masu.isValid() {
+			kiki.addKiki(to_masu, []Masu{masu})
+		}
 	}
 	return kiki
 }

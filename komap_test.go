@@ -88,17 +88,14 @@ func TestGenerateKiki(t *testing.T) {
 		}
 	}
 	{
-		// func generateKiki(masu Masu, kiki_arr []Masu, teban Teban) *Kiki
 		masu55 := newMasu(5, 5)
-		kiki_arr := KIKI_ARRAY_OF[FU]
-		kiki := generateKiki(masu55, kiki_arr, SENTE)
+		kiki := generateKiki(masu55, newKoma(FU, SENTE), SENTE)
 		masu54 := newMasu(5, 4)
 		assert(kiki.count(masu54), 1)
 	}
 	{
 		masu55 := newMasu(5, 5)
-		kiki_arr := KIKI_ARRAY_OF[KEI]
-		kiki := generateKiki(masu55, kiki_arr, SENTE)
+		kiki := generateKiki(masu55, newKoma(KEI, SENTE), SENTE)
 		masu43 := newMasu(4, 3)
 		masu63 := newMasu(6, 3)
 		assert(kiki.count(masu43), 1)
@@ -106,8 +103,7 @@ func TestGenerateKiki(t *testing.T) {
 	}
 	{
 		masu55 := newMasu(5, 5)
-		kiki_arr := KIKI_ARRAY_OF[GIN]
-		kiki := generateKiki(masu55, kiki_arr, GOTE)
+		kiki := generateKiki(masu55, newKoma(GIN, GOTE), GOTE)
 		masu44 := newMasu(4, 4)
 		masu46 := newMasu(4, 6)
 		masu56 := newMasu(5, 6)
@@ -121,8 +117,7 @@ func TestGenerateKiki(t *testing.T) {
 	}
 	{
 		masu55 := newMasu(5, 5)
-		kiki_arr := KIKI_ARRAY_OF[NARIKEI]
-		kiki := generateKiki(masu55, kiki_arr, SENTE)
+		kiki := generateKiki(masu55, newKoma(NARIKEI, SENTE), SENTE)
 		masu44 := newMasu(4, 4)
 		masu45 := newMasu(4, 5)
 		masu54 := newMasu(5, 4)
