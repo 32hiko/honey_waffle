@@ -49,7 +49,7 @@ func newMove(from Masu, to Masu, kind KomaKind) *Move {
 
 // test ok
 func (move *Move) toUSIMove() string {
-	if move.from == KOMADAI {
+	if move.isDrop() {
 		// 打つときは、駒の種類はすべて大文字で。
 		return move.kind.alphabet() + "*" + move.to.masu2Str()
 	}
@@ -273,6 +273,10 @@ func (move *Move) canPromote(kind KomaKind, teban Teban) bool {
 
 func (move *Move) mustPromote(kind KomaKind, teban Teban) bool {
 	return !canDrop(move.to, kind, teban)
+}
+
+func (move *Move) isDrop() bool {
+	return move.from == KOMADAI
 }
 
 // test ok

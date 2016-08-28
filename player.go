@@ -77,18 +77,22 @@ func (player *Player) search() (bestmove string, score int) {
 
 func evaluateMove(ban *Ban, move *Move) (score int) {
 	score = 0
-	// 駒を取る手は駒の価値分加算する
-	if move.cap_kind != NO_KIND {
-		score = int((move.cap_kind + 1) * 100)
+	if move.isDrop() {
+		// 打つ手
+		// 暫定的に、打つ手を評価してみる
+		score += int((move.kind + 1) * 10)
+	} else {
+		// 移動する手
+		// 駒を取る手は駒の価値分加算する
+		if move.cap_kind != NO_KIND {
+			score += int((move.cap_kind + 1) * 100)
+		}
+		// 成る手を評価する
+		if move.promote {
+			score += 100
+		}
 	}
-	// 成る手を評価する
-	if move.promote {
-		score += 100
-	}
-	// 暫定的に、打つ手を評価してみる
-	if move.from == KOMADAI {
-		score = int((move.kind + 1) * 10)
-	}
+
 	// 警告を消す用
 	ban.doNothing()
 	return
