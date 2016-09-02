@@ -21,13 +21,30 @@ func (player *Player) search() (bestmove string, score int) {
 		return
 	}
 	// TODO 定跡があればそこから指す
+	index := -1
+	index, score = evaluateBan(ban, moves)
+	// いい手順だけ返してくる
+	// いい手順を再びbanに適用し、そこからdepth２で読ませる、というのを繰り返す。playerの設定でdepthを決めておく
 
+	// TODO 時間配分
+	// TODO 送信
+	if index == -1 {
+		// 合法手がなくなった場合、詰み
+		bestmove = "resign"
+		score = 0
+		return
+	}
+	bestmove = moves.moves_map[index].toUSIMove()
+	return
+}
+
+func evaluateBan(ban *Ban, moves *Moves) (index, score int) {
 	// depth 2で読むのがこのブロック。
 	my_move_base_score := -9999
 	base_sfen := ban.toSFEN(true)
 	teban := ban.teban
 	score = -9999
-	index := -1
+	index = -1
 	// TODO 1手指して戻す、を高速に実現できるようにする。
 	for i, move := range moves.moves_map {
 		next_ban := newBanFromSFEN(base_sfen)
@@ -48,7 +65,7 @@ func (player *Player) search() (bestmove string, score int) {
 		if next_moves.count() == 0 {
 			// 相手の手がないのは詰み。
 			score = 9999
-			bestmove = moves.moves_map[i].toUSIMove()
+			index = i
 			return
 		}
 		enemy_move_best_score := -9999
@@ -61,7 +78,7 @@ func (player *Player) search() (bestmove string, score int) {
 		if enemy_move_best_score == -9999 {
 			// 相手のいい手がない。
 			score = 9999
-			bestmove = moves.moves_map[i].toUSIMove()
+			index = i
 			return
 		} else {
 			if (my_move_score - enemy_move_best_score) > score {
@@ -70,18 +87,6 @@ func (player *Player) search() (bestmove string, score int) {
 			}
 		}
 	}
-	// いい手順だけ返してくる
-	// いい手順を再びbanに適用し、そこからdepth２で読ませる、というのを繰り返す。playerの設定でdepthを決めておく
-
-	// TODO 時間配分
-	// TODO 送信
-	if index == -1 {
-		// 合法手がなくなった場合、詰み
-		bestmove = "resign"
-		score = 0
-		return
-	}
-	bestmove = moves.moves_map[index].toUSIMove()
 	return
 }
 
