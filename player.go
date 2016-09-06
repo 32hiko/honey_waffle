@@ -22,7 +22,7 @@ func (player *Player) search() (bestmove string, score int) {
 	}
 	// TODO 定跡があればそこから指す
 	index := -1
-	index, score = evaluate(ban, moves, 4)
+	index, score = evaluate(ban, moves, 3)
 	// いい手順だけ返してくる
 	// いい手順を再びbanに適用し、そこからdepth２で読ませる、というのを繰り返す。playerの設定でdepthを決めておく
 
@@ -69,44 +69,16 @@ func evaluate(ban *Ban, moves *Moves, depth int) (index, score int) {
 			index = i
 			return
 		}
-		enemy_move_best_score := -9999
-		enemy_index := -1
-		next_ban_sfen := next_ban.toSFEN(true)
-		for j, enemy_move := range enemy_moves.moves_map {
-			return_ban := newBanFromSFEN(next_ban_sfen)
-			return_ban.applySFENMove(enemy_move.toUSIMove())
-			return_ban.createKomap()
-			if return_ban.isOute(teban.aite()) {
-				// 相手の自殺手
-				continue
+		if depth > 1 {
+			_, s := evaluate(next_ban, enemy_moves, depth-1)
+			if s > score {
+				score = s
+				index = i
 			}
-			enemy_move_score := evaluateMove(return_ban, enemy_move)
-			if enemy_move_score > enemy_move_best_score {
-				enemy_move_best_score = enemy_move_score
-				enemy_index = j
-			}
-		}
-		if enemy_move_best_score == -9999 {
-			// 相手のいい手がないのは詰み
-			score = 9999
-			index = i
-			return
 		} else {
-			if (my_move_score - enemy_move_best_score) > score {
-				if depth == 2 {
-					score = my_move_score - enemy_move_best_score
-					index = i
-				} else {
-					my_new_ban := newBanFromSFEN(next_ban_sfen)
-					my_new_ban.applySFENMove(enemy_moves.moves_map[enemy_index].toUSIMove())
-					my_new_ban.createKomap()
-					new_my_moves := generateAllMoves(my_new_ban)
-					_, temp_score := evaluate(my_new_ban, new_my_moves, depth-2)
-					if temp_score > score {
-						score = temp_score
-						index = i
-					}
-				}
+			if my_move_score > score {
+				score = my_move_score
+				index = i
 			}
 		}
 	}
