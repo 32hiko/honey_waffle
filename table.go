@@ -4,13 +4,15 @@ import "sort"
 
 type Record struct {
 	score int
-	move  *Move
+	index int
+	moves *Moves
 }
 
-func newRecord(score int, move *Move) *Record {
+func newRecord(score, index int, moves *Moves) *Record {
 	record := Record{
 		score: score,
-		move:  move,
+		index: index,
+		moves: moves,
 	}
 	return &record
 }

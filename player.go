@@ -22,7 +22,7 @@ func (player *Player) search() (bestmove string, score int) {
 	}
 	// TODO 定跡があればそこから指す
 	index := -1
-	index, score = evaluate(ban, moves, 3)
+	index, score = evaluate(ban, moves, 5)
 	// いい手順だけ返してくる
 	// いい手順を再びbanに適用し、そこからdepth２で読ませる、というのを繰り返す。playerの設定でdepthを決めておく
 
@@ -44,6 +44,7 @@ func evaluate(ban *Ban, moves *Moves, depth int) (index, score int) {
 	teban := ban.teban
 	score = -9999
 	index = -1
+	table := newTable(3)
 	// TODO 1手指して戻す、を高速に実現できるようにする。
 	for i, move := range moves.moves_map {
 		next_ban := newBanFromSFEN(base_sfen)
@@ -53,7 +54,7 @@ func evaluate(ban *Ban, moves *Moves, depth int) (index, score int) {
 			// ここでの王手は自殺手を意味する。評価できない。
 			continue
 		}
-		// 評価値テーブルがあるなら、ここで参照する
+		// TODO: 評価値テーブルがあるなら、ここで参照する
 		my_move_score := evaluateMove(next_ban, move)
 		if my_move_score < my_move_base_score {
 			// 必要なら評価値を保存
@@ -69,20 +70,37 @@ func evaluate(ban *Ban, moves *Moves, depth int) (index, score int) {
 			index = i
 			return
 		}
+
+		// 相手の手を保管する
+		table.put(newRecord(my_move_score, i, enemy_moves))
+	}
+
+	// 上位 width件だけ先を読む。
+	for table_index, record := range table.records {
+		// TODO: tableは、recordを入れていなくてもwidth分回ってしまう。countでガードする。
+		if table.count == table_index {
+			break
+		}
+		next_ban := newBanFromSFEN(base_sfen)
+		next_move := moves.moves_map[record.index]
+		next_ban.applySFENMove(next_move.toUSIMove())
+		next_ban.createKomap()
 		if depth > 1 {
-			_, enemy_score := evaluate(next_ban, enemy_moves, depth-1)
-			total_score := my_move_score - enemy_score
+			// TODO: 9999で返ってきたら詰みなので、考慮が必要。
+			_, enemy_score := evaluate(next_ban, record.moves, depth-1)
+			total_score := record.score - enemy_score
 			if total_score > score {
 				score = total_score
-				index = i
+				index = record.index
 			}
 		} else {
-			if my_move_score > score {
-				score = my_move_score
-				index = i
+			if record.score > score {
+				score = record.score
+				index = record.index
 			}
 		}
 	}
+
 	return
 }
 
