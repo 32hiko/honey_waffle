@@ -70,9 +70,10 @@ func evaluate(ban *Ban, moves *Moves, depth int) (index, score int) {
 			return
 		}
 		if depth > 1 {
-			_, s := evaluate(next_ban, enemy_moves, depth-1)
-			if s > score {
-				score = s
+			_, enemy_score := evaluate(next_ban, enemy_moves, depth-1)
+			total_score := my_move_score - enemy_score
+			if total_score > score {
+				score = total_score
 				index = i
 			}
 		} else {
@@ -98,7 +99,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		// 移動する手
 		// 駒を取る手は駒の価値分加算する
 		if move.cap_kind != NO_KIND {
-			score += int((move.cap_kind + 1) * 100)
+			score += int((move.cap_kind.demote() + 1) * 100)
 		}
 		// 成る手を評価する
 		if move.promote {
@@ -115,7 +116,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		if exists {
 			if koma.teban == ban.teban {
 				// 相手の駒に当てる手を評価
-				score += int((koma.kind + 1) * 5)
+				score += int((koma.kind.demote() + 1) * 5)
 			}
 		}
 	}
@@ -131,7 +132,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	// 相手の利きが多いマスへの手は減点する
 	if aite_kiki.count(move.to) > teban_kiki.count(move.to) {
 		if move.cap_kind == NO_KIND {
-			score -= int((move.kind + 1) * 100)
+			score -= int((move.kind.demote() + 1) * 100)
 		}
 	}
 

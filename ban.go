@@ -236,7 +236,7 @@ func (ban *Ban) doMove(from Masu, to Masu, promoted bool) {
 				// 取るには、相手の駒の位置を無にする
 				ban.masu[aiteban][k][i] = MU
 				// 成っていたら戻す
-				kind := demote(k)
+				kind := k.demote()
 				// 自分の駒として駒台に置く
 				for j := 0; j < 18; j++ {
 					if ban.masu[teban][kind][j] == MU {

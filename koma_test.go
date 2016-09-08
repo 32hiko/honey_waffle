@@ -24,7 +24,7 @@ func TestPromote(t *testing.T) {
 		assertBool(koma.promoted(), true)
 		assertKind(koma.kind, after)
 		k := koma.kind
-		assertKind(demote(k), before)
+		assertKind(k.demote(), before)
 	}
 	assert(FU, TOKIN)
 	assert(KYO, NARIKYO)

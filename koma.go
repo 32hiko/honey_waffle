@@ -52,7 +52,7 @@ func promoted(kind KomaKind) bool {
 	return kind >= PROMOTE
 }
 
-func demote(kind KomaKind) KomaKind {
+func (kind KomaKind) demote() KomaKind {
 	if promoted(kind) {
 		return kind - PROMOTE
 	} else {
@@ -90,7 +90,7 @@ func (kind KomaKind) canFarMove() bool {
 }
 
 func (kind KomaKind) alphabet() string {
-	switch demote(kind) {
+	switch kind.demote() {
 	case FU:
 		return "P"
 	case KYO:
