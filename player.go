@@ -22,7 +22,7 @@ func (player *Player) search() (bestmove string, score int) {
 	}
 	// TODO 定跡があればそこから指す
 	index := -1
-	index, score = evaluate(ban, moves, 5)
+	index, score = evaluate(ban, moves, 5, 5)
 	// いい手順だけ返してくる
 	// いい手順を再びbanに適用し、そこからdepth２で読ませる、というのを繰り返す。playerの設定でdepthを決めておく
 
@@ -38,13 +38,13 @@ func (player *Player) search() (bestmove string, score int) {
 	return
 }
 
-func evaluate(ban *Ban, moves *Moves, depth int) (index, score int) {
+func evaluate(ban *Ban, moves *Moves, depth, width int) (index, score int) {
 	my_move_base_score := -9999
 	base_sfen := ban.toSFEN(true)
 	teban := ban.teban
 	score = -9999
 	index = -1
-	table := newTable(3)
+	table := newTable(width)
 	// TODO 1手指して戻す、を高速に実現できるようにする。
 	for i, move := range moves.moves_map {
 		next_ban := newBanFromSFEN(base_sfen)
@@ -81,13 +81,18 @@ func evaluate(ban *Ban, moves *Moves, depth int) (index, score int) {
 		if table.count == table_index {
 			break
 		}
+		if record.score == 9999 {
+			score = record.score
+			index = record.index
+			return
+		}
 		next_ban := newBanFromSFEN(base_sfen)
 		next_move := moves.moves_map[record.index]
 		next_ban.applySFENMove(next_move.toUSIMove())
 		next_ban.createKomap()
 		if depth > 1 {
 			// TODO: 9999で返ってきたら詰みなので、考慮が必要。
-			_, enemy_score := evaluate(next_ban, record.moves, depth-1)
+			_, enemy_score := evaluate(next_ban, record.moves, depth-1, width-1)
 			total_score := record.score - enemy_score
 			if total_score > score {
 				score = total_score
