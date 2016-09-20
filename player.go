@@ -22,11 +22,10 @@ func (player *Player) search() (bestmove string, score int) {
 	}
 	// TODO 定跡があればそこから指す
 	index := -1
-	index, score = evaluate(ban, moves, 5, 5)
-	// いい手順だけ返してくる
-	// いい手順を再びbanに適用し、そこからdepth２で読ませる、というのを繰り返す。playerの設定でdepthを決めておく
-
 	// TODO 時間配分
+	index, score = evaluate(ban, moves)
+	// 作りとしては、深さnで読ませる→まだ時間ある→深さn+2で読ませる、と深めていく感じで。
+
 	// TODO 送信
 	if index == -1 {
 		// 合法手がなくなった場合、詰み
@@ -38,7 +37,71 @@ func (player *Player) search() (bestmove string, score int) {
 	return
 }
 
-func evaluate(ban *Ban, moves *Moves, depth, width int) (index, score int) {
+func evaluate(ban *Ban, moves *Moves) (index, score int) {
+	my_move_base_score := -9999
+	base_sfen := ban.toSFEN(true)
+	teban := ban.teban
+	score = -9999
+	index = -1
+	table := newTable(moves.count())
+	// TODO 1手指して戻す、を高速に実現できるようにする。
+	for i, move := range moves.moves_map {
+		next_ban := newBanFromSFEN(base_sfen)
+		next_ban.applySFENMove(move.toUSIMove())
+		next_ban.createKomap()
+		if next_ban.isOute(teban) {
+			// ここでの王手は自殺手を意味する。評価できない。
+			continue
+		}
+		// TODO: 評価値テーブルがあるなら、ここで参照する
+		// TODO: 1手ごとの評価値を算出する処理は、goルーチンでやる。
+		my_move_score := evaluateMove(next_ban, move)
+		if my_move_score < my_move_base_score {
+			// 必要なら評価値を保存
+			// 極端に悪くなる手は読まない
+			continue
+		}
+
+		// 相手の手を保管する
+		table.put(newRecord(my_move_score, i, newMoves()))
+	}
+
+	// TODO: 時間がまだある場合、探索を続ける。
+	// 現時点での最善手は、先頭レコード。
+
+	// 上位 width件だけ先を読む。
+	for table_index, record := range table.records {
+		// TODO: tableは、recordを入れていなくてもwidth分回ってしまう。countでガードする。
+		if table.count == table_index {
+			break
+		}
+
+		next_ban := newBanFromSFEN(base_sfen)
+		next_move := moves.moves_map[record.index]
+		next_ban.applySFENMove(next_move.toUSIMove())
+		next_ban.createKomap()
+
+		// TODO: 9999で返ってきたら詰みなので、考慮が必要。
+		_, enemy_score := doEvaluate(next_ban, record.moves, 1, 100)
+		if enemy_score == -9999 {
+			score = 9999
+			index = record.index
+			return
+		}
+		if enemy_score == 9999 {
+			continue
+		}
+		total_score := record.score - enemy_score
+		if total_score > score {
+			score = total_score
+			index = record.index
+		}
+
+	}
+	return
+}
+
+func doEvaluate(ban *Ban, moves *Moves, depth, width int) (index, score int) {
 	my_move_base_score := -9999
 	base_sfen := ban.toSFEN(true)
 	teban := ban.teban
@@ -62,17 +125,8 @@ func evaluate(ban *Ban, moves *Moves, depth, width int) (index, score int) {
 			continue
 		}
 
-		// 相手の最高の手を探す
-		enemy_moves := generateAllMoves(next_ban)
-		if enemy_moves.count() == 0 {
-			// 相手の手がないのは詰み。
-			score = 9999
-			index = i
-			return
-		}
-
 		// 相手の手を保管する
-		table.put(newRecord(my_move_score, i, enemy_moves))
+		table.put(newRecord(my_move_score, i, newMoves()))
 	}
 
 	// 上位 width件だけ先を読む。
@@ -92,7 +146,7 @@ func evaluate(ban *Ban, moves *Moves, depth, width int) (index, score int) {
 		next_ban.createKomap()
 		if depth > 1 {
 			// TODO: 9999で返ってきたら詰みなので、考慮が必要。
-			_, enemy_score := evaluate(next_ban, record.moves, depth-1, width-1)
+			_, enemy_score := doEvaluate(next_ban, record.moves, depth-1, width-1)
 			total_score := record.score - enemy_score
 			if total_score > score {
 				score = total_score
