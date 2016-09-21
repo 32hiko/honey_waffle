@@ -16,13 +16,15 @@ const SFEN_STARTPOS = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
 
 var master_ban *Ban
 
+var write_buffer *bufio.Writer
+
 func main() {
 	setUp()
 	usiClient()
 }
 
 func setUp() {
-	// TODO: set up
+	write_buffer = bufio.NewWriter(os.Stdout)
 }
 
 func usiClient() {
@@ -51,7 +53,8 @@ func usiClient() {
 }
 
 func usiResponse(str string) {
-	fmt.Println(str)
+	fmt.Fprintln(write_buffer, str)
+	write_buffer.Flush()
 }
 
 func doUsi() {
