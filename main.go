@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const SW_NAME = "HoneyWaffle"
@@ -13,6 +14,8 @@ const SW_VERSION = "0.1.0"
 const AUTHOR = "Mitsuhiko Watanabe"
 
 const SFEN_STARTPOS = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
+
+const SAFETY_MS = 3 * 1000
 
 var master_ban *Ban
 
@@ -121,15 +124,49 @@ func doGo(command string) {
 		master: master_ban,
 		config: config,
 	}
-	bestmove, score := player.search()
+
+	// 使える時間（ミリ秒）
+	teban := master_ban.teban
+	var my_ms int
+	if teban.isSente() {
+		my_ms = btime + byoyomi
+	} else {
+		my_ms = wtime + byoyomi
+	}
+	available_ms := my_ms - SAFETY_MS
+
+	// mainでの時間管理
+	main_timer := time.NewTimer(time.Duration(available_ms) * time.Millisecond)
+	// 指し手の取得用
+	result_ch := make(chan SearchResult)
+	// goroutine停止用
+	stop_ch := make(chan string)
+
+	go player.search(result_ch, stop_ch, available_ms)
+
+	select {
+	case result := <-result_ch:
+		usiResponseBy(result)
+	case <-main_timer.C:
+		close(stop_ch)
+		result := <-result_ch
+		usiResponseBy(result)
+		// 時間切れになる前に投了する
+		// usiResponse("bestmove " + "resign")
+	}
+
 	// 仮実装
 	// usiResponse("info time 1 depth 1 nodes 1 score cp " + fmt.Sprint(score) + " pv" + bestmove) // 表示されない
 	// time.Sleep(1000 * time.Millisecond)
-	usiResponse("info string " + fmt.Sprint(score)) // 読み筋のところに表示された。
 	// time.Sleep(1000 * time.Millisecond)
 	// usiResponse("info nodes 12345 nps 67890") // 表の見出しに表示された。
 	// time.Sleep(1000 * time.Millisecond)
-	usiResponse("info string " + bestmove + " test") // 読み筋のところに表示された。
+}
+
+func usiResponseBy(sr SearchResult) {
+	bestmove := sr.bestmove
+	usiResponse("info string " + fmt.Sprint(sr.score)) // 読み筋のところに表示された。
+	usiResponse("info string " + bestmove + " test")   // 読み筋のところに表示された。
 	usiResponse("bestmove " + bestmove)
 }
 

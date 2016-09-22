@@ -6,43 +6,59 @@ type PlayerConfig struct {
 	byoyomi int
 }
 
+type SearchResult struct {
+	bestmove string
+	score    int
+}
+
 type Player struct {
 	master *Ban
 	config *PlayerConfig
 }
 
-func (player *Player) search() (bestmove string, score int) {
+func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, available_ms int) {
 	ban := player.master
 	moves := generateAllMoves(ban)
 	// TODO 入玉してからの宣言勝ち
 	if moves.count() == 0 {
-		bestmove = "resign"
-		score = 0
+		result_ch <- newSearchResult("resign", 0)
 		return
 	}
 	// TODO 定跡があればそこから指す
-	index := -1
-	// TODO 時間配分
-	index, score = evaluate(ban, moves)
-	// 作りとしては、深さnで読ませる→まだ時間ある→深さn+2で読ませる、と深めていく感じで。
 
-	// TODO 送信
-	if index == -1 {
-		// 合法手がなくなった場合、詰み
-		bestmove = "resign"
-		score = 0
-		return
+	search_ch := make(chan SearchResult)
+	go evaluate(search_ch, ban, moves)
+	usiResponse("info string " + "searching...")
+	for {
+		select {
+		case result := <-search_ch:
+			// 今後の作りとしては、深さnで読ませる→まだ時間ある→深さn+2で読ませる、と深めていく感じで。
+			result_ch <- result
+			return
+		case _, open := <-stop_ch:
+			// mainにて探索タイムアウト
+			if !open {
+				result_ch <- newSearchResult(moves.moves_map[0].toUSIMove(), 0)
+				return
+			}
+		}
 	}
-	bestmove = moves.moves_map[index].toUSIMove()
-	return
 }
 
-func evaluate(ban *Ban, moves *Moves) (index, score int) {
+func newSearchResult(bm string, sc int) SearchResult {
+	sr := SearchResult{
+		bestmove: bm,
+		score:    sc,
+	}
+	return sr
+}
+
+func evaluate(result_ch chan SearchResult, ban *Ban, moves *Moves) {
 	my_move_base_score := -9999
 	base_sfen := ban.toSFEN(true)
 	teban := ban.teban
-	score = -9999
-	index = -1
+	score := -9999
+	index := -1
 	table := newTable(moves.count())
 	// TODO 1手指して戻す、を高速に実現できるようにする。
 	for i, move := range moves.moves_map {
@@ -86,6 +102,8 @@ func evaluate(ban *Ban, moves *Moves) (index, score int) {
 		if enemy_score == -9999 {
 			score = 9999
 			index = record.index
+			move := moves.moves_map[index]
+			result_ch <- newSearchResult(move.toUSIMove(), score)
 			return
 		}
 		if enemy_score == 9999 {
@@ -97,6 +115,13 @@ func evaluate(ban *Ban, moves *Moves) (index, score int) {
 			index = record.index
 		}
 
+	}
+	if index == -1 {
+		// 合法手がなくなった場合、詰み
+		result_ch <- newSearchResult("resign", 0)
+	} else {
+		move := moves.moves_map[index]
+		result_ch <- newSearchResult(move.toUSIMove(), score)
 	}
 	return
 }
