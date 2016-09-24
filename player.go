@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type PlayerConfig struct {
 	btime   int
 	wtime   int
@@ -77,25 +79,14 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 		move_ch := make(chan SearchResult)
 		// 全部の手の自殺手チェックをし、評価を出す
 		for _, move := range moves.moves_map {
-			go func() {
-				next_ban := newBanFromSFEN(base_sfen)
-				move_str := move.toUSIMove()
-				next_ban.applySFENMove(move_str)
-				next_ban.createKomap()
-				sr := newSearchResult(move_str, 0)
-				if next_ban.isOute(teban) {
-					// ここでの王手は自殺手を意味する。評価できない。
-					sr.score = -9999
-				}
-				sr.score = evaluateMove(next_ban, move)
-				move_ch <- sr
-			}()
+			go checkAndEvalualte(move_ch, base_sfen, move, teban)
 		}
 		for i := 0; i < moves.count(); i++ {
 			// 上記goroutineの結果待ち
 			sr := <-move_ch
 			if sr.score > -9999 {
 				rc := newRecord(sr.score, sr.bestmove)
+				usiResponse("info string " + sr.bestmove + " " + fmt.Sprint(sr.score))
 				table.put(rc)
 			}
 		}
@@ -110,7 +101,7 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 	/*
 		2.上位n件のmoveから相手の全応手を出す
 	*/
-	{
+	if false {
 		move_ch := make(chan SearchResult)
 		table_count := table.count
 		next_table := newTable(table_count)
@@ -152,6 +143,21 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 	}
 	result_ch <- table.records[0].toSearchResult()
 	return
+}
+
+func checkAndEvalualte(ch chan SearchResult, sfen string, move *Move, teban Teban) {
+	next_ban := newBanFromSFEN(sfen)
+	move_str := move.toUSIMove()
+	next_ban.applySFENMove(move_str)
+	next_ban.createKomap()
+	sr := newSearchResult(move_str, 0)
+	if next_ban.isOute(teban) {
+		// ここでの王手は自殺手を意味する。評価できない。
+		sr.score = -9999
+	} else {
+		sr.score = evaluateMove(next_ban, move)
+	}
+	ch <- sr
 }
 
 func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
