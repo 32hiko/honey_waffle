@@ -120,10 +120,7 @@ func doGo(command string) {
 		btime:   btime,
 		wtime:   wtime,
 		byoyomi: byoyomi}
-	player := &Player{
-		master: master_ban,
-		config: config,
-	}
+	player := newPlayer(master_ban, config)
 
 	// 使える時間（ミリ秒）
 	teban := master_ban.teban

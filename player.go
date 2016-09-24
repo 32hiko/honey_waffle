@@ -9,11 +9,22 @@ type PlayerConfig struct {
 type SearchResult struct {
 	bestmove string
 	score    int
+	is_oute  bool
 }
 
 type Player struct {
 	master *Ban
 	config *PlayerConfig
+	cache  Cache
+}
+
+func newPlayer(ban *Ban, config *PlayerConfig) *Player {
+	player := Player{
+		master: ban,
+		config: config,
+		cache:  newCache(),
+	}
+	return &player
 }
 
 func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, available_ms int) {
@@ -27,7 +38,7 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 	// TODO 定跡があればそこから指す
 
 	search_ch := make(chan SearchResult)
-	go evaluate(search_ch, ban, moves)
+	go player.evaluate(search_ch, ban, moves)
 	usiResponse("info string " + "searching...")
 	for {
 		select {
@@ -53,9 +64,9 @@ func newSearchResult(bm string, sc int) SearchResult {
 	return sr
 }
 
-func evaluate(result_ch chan SearchResult, ban *Ban, moves *Moves) {
+func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Moves) {
 	my_move_base_score := -9999
-	base_sfen := ban.toSFEN(true)
+	base_sfen := ban.toSFEN(false)
 	teban := ban.teban
 	score := -9999
 	index := -1
@@ -81,6 +92,7 @@ func evaluate(result_ch chan SearchResult, ban *Ban, moves *Moves) {
 		// 相手の手を保管する
 		table.put(newRecord(my_move_score, i, newMoves()))
 	}
+	player.cache[base_sfen] = table
 
 	// TODO: 時間がまだある場合、探索を続ける。
 	// 現時点での最善手は、先頭レコード。
