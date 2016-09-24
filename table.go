@@ -3,18 +3,20 @@ package main
 import "sort"
 
 type Record struct {
-	score int
-	index int
-	move  *Move
+	score    int
+	move_str string
 }
 
-func newRecord(score, index int, move *Move) *Record {
+func newRecord(score int, move_str string) *Record {
 	record := Record{
-		score: score,
-		index: index,
-		move:  move,
+		score:    score,
+		move_str: move_str,
 	}
 	return &record
+}
+
+func (record *Record) toSearchResult() SearchResult {
+	return newSearchResult(record.move_str, record.score)
 }
 
 type Table struct {
