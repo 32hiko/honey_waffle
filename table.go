@@ -5,14 +5,14 @@ import "sort"
 type Record struct {
 	score int
 	index int
-	moves *Moves
+	move  *Move
 }
 
-func newRecord(score, index int, moves *Moves) *Record {
+func newRecord(score, index int, move *Move) *Record {
 	record := Record{
 		score: score,
 		index: index,
-		moves: moves,
+		move:  move,
 	}
 	return &record
 }

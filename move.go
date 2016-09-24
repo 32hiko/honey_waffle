@@ -10,7 +10,6 @@ type Move struct {
 	kind     KomaKind
 	cap_kind KomaKind
 	promote  bool
-	score    int
 }
 
 func newMoves() *Moves {
@@ -46,10 +45,6 @@ func newMove(from Masu, to Masu, kind KomaKind) *Move {
 		cap_kind: NO_KIND,
 	}
 	return &move
-}
-
-func (move *Move) setScore(s int) {
-	move.score = s
 }
 
 // test ok
