@@ -3,8 +3,11 @@ package main
 import "sort"
 
 type Record struct {
-	score    int
-	move_str string
+	score           int
+	move_str        string
+	is_oute         bool
+	parent_move_str string
+	parent_sfen     string
 }
 
 func newRecord(score int, move_str string) *Record {

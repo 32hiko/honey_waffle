@@ -11,7 +11,6 @@ type PlayerConfig struct {
 type SearchResult struct {
 	bestmove string
 	score    int
-	is_oute  bool
 }
 
 type Player struct {
@@ -70,24 +69,27 @@ func newSearchResult(bm string, sc int) SearchResult {
 func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Moves) {
 	base_sfen := ban.toSFEN(false)
 	teban := ban.teban
-	table := newTable(moves.count())
+	// table := newTable(moves.count())
+	table := newTable(10)
 
 	/*
 		1.最初の手を全部評価する
 	*/
 	{
-		move_ch := make(chan SearchResult)
+		move_ch := make(chan Record)
 		// 全部の手の自殺手チェックをし、評価を出す
 		for _, move := range moves.moves_map {
-			go checkAndEvalualte(move_ch, base_sfen, move, teban)
+			go checkAndEvaluate(move_ch, base_sfen, move, teban)
 		}
 		for i := 0; i < moves.count(); i++ {
 			// 上記goroutineの結果待ち
-			sr := <-move_ch
-			if sr.score > -9999 {
-				rc := newRecord(sr.score, sr.bestmove)
-				usiResponse("info string " + sr.bestmove + " " + fmt.Sprint(sr.score))
-				table.put(rc)
+			record := <-move_ch
+			if record.score == -9999 {
+				// 自殺手
+			} else {
+				usiResponse("info string " + record.move_str + " " + fmt.Sprint(record.score))
+				table.put(&record)
+				// TODO: 王手なら、別のテーブルにも入れてそちらで1手だけ読む。
 			}
 		}
 		if table.count == 0 {
@@ -101,37 +103,31 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 	/*
 		2.上位n件のmoveから相手の全応手を出す
 	*/
-	if false {
-		move_ch := make(chan SearchResult)
+	{
+		move_ch := make(chan Record)
 		table_count := table.count
-		next_table := newTable(table_count)
+		next_table := newTable(1)
 		for table_index, record := range table.records {
 			// tableは、recordを入れていなくてもwidth分回ってしまう。countでガードする。
 			if table_count == table_index {
 				break
 			}
 			// 上位n件にするなら、ここでforを抜ける
-
-			next_ban := newBanFromSFEN(base_sfen)
-			next_ban.applySFENMove(record.move_str)
-			// next_ban_sfenがほしいので外で。
-			next_ban_sfen := next_ban.toSFEN(false)
-			go func() {
-				enemy_moves := generateAllMoves(next_ban)
-				enemy_record := player.doEvaluate2(next_ban, enemy_moves, enemy_moves.count())
-				// TODO: SearchResultとRecordは同じものにして変換をなくす
-				move_ch <- enemy_record.toSearchResult()
-			}()
-
-			for i := 0; i < table_count; i++ {
-				// 上記goroutineの結果待ち
-				sr := <-move_ch
-				if sr.score > -9999 {
-					rc := newRecord(sr.score, sr.bestmove)
-					next_table.put(rc)
-				}
+			// 相手の最善手1手だけを取得する
+			go player.doEvaluate(move_ch, base_sfen, record.move_str)
+		}
+		for i := 0; i < table_count; i++ {
+			// 上記goroutineの結果待ち
+			record := <-move_ch
+			if record.score == -9999 {
+				// 相手の手がないので1手詰み
+				usiResponse("info string tsumi!")
+				result_ch <- newSearchResult(record.parent_move_str, 9999)
+				return
+			} else {
+				next_table.put(&record)
 			}
-			player.cache[next_ban_sfen] = next_table
+			player.cache[record.parent_sfen] = next_table
 		}
 	}
 
@@ -145,19 +141,30 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 	return
 }
 
-func checkAndEvalualte(ch chan SearchResult, sfen string, move *Move, teban Teban) {
+func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
 	next_ban := newBanFromSFEN(sfen)
 	move_str := move.toUSIMove()
 	next_ban.applySFENMove(move_str)
 	next_ban.createKomap()
-	sr := newSearchResult(move_str, 0)
+	record := newRecord(0, move_str)
 	if next_ban.isOute(teban) {
 		// ここでの王手は自殺手を意味する。評価できない。
-		sr.score = -9999
+		record.score = -9999
 	} else {
-		sr.score = evaluateMove(next_ban, move)
+		record.score = evaluateMove(next_ban, move)
 	}
-	ch <- sr
+	ch <- *(record)
+}
+
+func (player *Player) doEvaluate(ch chan Record, sfen string, move_str string) {
+	next_ban := newBanFromSFEN(sfen)
+	next_ban.applySFENMove(move_str)
+	next_ban_sfen := next_ban.toSFEN(false)
+	enemy_moves := generateAllMoves(next_ban)
+	enemy_record := player.doEvaluate2(next_ban, enemy_moves, enemy_moves.count())
+	enemy_record.parent_move_str = move_str
+	enemy_record.parent_sfen = next_ban_sfen
+	ch <- *(enemy_record)
 }
 
 func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
@@ -168,34 +175,27 @@ func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
 		1.最初の手を全部評価する
 	*/
 	{
-		move_ch := make(chan SearchResult)
+		move_ch := make(chan Record)
 		// 全部の手の自殺手チェックをし、評価を出す
 		for _, move := range moves.moves_map {
-			go func() {
-				next_ban := newBanFromSFEN(base_sfen)
-				move_str := move.toUSIMove()
-				next_ban.applySFENMove(move_str)
-				next_ban.createKomap()
-				sr := newSearchResult(move_str, 0)
-				if next_ban.isOute(teban) {
-					// ここでの王手は自殺手を意味する。評価できない。
-					sr.score = -9999
-				}
-				sr.score = evaluateMove(next_ban, move)
-				move_ch <- sr
-			}()
+			go checkAndEvaluate(move_ch, base_sfen, move, teban)
 		}
 		for i := 0; i < moves.count(); i++ {
 			// 上記goroutineの結果待ち
-			sr := <-move_ch
-			if sr.score > -9999 {
-				rc := newRecord(sr.score, sr.bestmove)
-				table.put(rc)
+			record := <-move_ch
+			if record.score == -9999 {
+				// 自殺手
+			} else {
+				table.put(&record)
 			}
 		}
 		player.cache[base_sfen] = table
 	}
-	return table.records[0]
+	if table.count > 0 {
+		return table.records[0]
+	} else {
+		return newRecord(-9999, "resign")
+	}
 }
 
 func evaluateMove(ban *Ban, move *Move) (score int) {
