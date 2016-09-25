@@ -25,7 +25,7 @@ func timerSample(result_ch chan string, stop_ch chan interface{}, thinking int) 
 
 }
 
-func TestTimerSample(t *testing.T) {
+func ignoreTestTimerSample(t *testing.T) {
 	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {
 			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
@@ -58,11 +58,11 @@ func TestTimerSample(t *testing.T) {
 		result := 0
 		select {
 		case <-timer.C:
-		// timeout
+			// timeout
 			close(stop_ch)
 			result += 1
 		case msg := <-result_ch:
-		// result
+			// result
 			assert(msg, "result string...")
 		}
 		assert(result, 1)

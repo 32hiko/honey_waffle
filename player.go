@@ -133,7 +133,7 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 			usiResponse("info string " + fmt.Sprint(i))
 			if next_table.count > 0 {
 				next_record := next_table.records[0]
-				usiResponse("info string " + fmt.Sprint(next_record.score))
+				usiResponse("info string " + next_record.parent_move_str + " " + fmt.Sprint(next_record.score))
 				if next_record.score == -9999 {
 					usiResponse("info string tsumi!")
 					result_ch <- newSearchResult(next_record.parent_move_str, 9999)
