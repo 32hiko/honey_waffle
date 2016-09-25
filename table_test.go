@@ -15,11 +15,11 @@ func TestNewTable(t *testing.T) {
 	// こちらは、ただソートの動作の確認とサンプルとして。通常はデータの登録にputを使うこと。
 	{
 		table := newTable(5)
-		table.records[0] = newRecord(100, "")
-		table.records[1] = newRecord(130, "")
-		table.records[2] = newRecord(120, "")
-		table.records[3] = newRecord(110, "")
-		table.records[4] = newRecord(140, "")
+		table.records[0] = newRecord(100, "", "", "")
+		table.records[1] = newRecord(130, "", "", "")
+		table.records[2] = newRecord(120, "", "", "")
+		table.records[3] = newRecord(110, "", "", "")
+		table.records[4] = newRecord(140, "", "", "")
 		table.count = 5
 		// ただSortすると、小さいもの順に。
 		sort.Sort(table)
@@ -31,11 +31,11 @@ func TestNewTable(t *testing.T) {
 	}
 	{
 		table := newTable(5)
-		table.records[0] = newRecord(100, "")
-		table.records[1] = newRecord(130, "")
-		table.records[2] = newRecord(120, "")
-		table.records[3] = newRecord(110, "")
-		table.records[4] = newRecord(140, "")
+		table.records[0] = newRecord(100, "", "", "")
+		table.records[1] = newRecord(130, "", "", "")
+		table.records[2] = newRecord(120, "", "", "")
+		table.records[3] = newRecord(110, "", "", "")
+		table.records[4] = newRecord(140, "", "", "")
 		table.count = 5
 		// 評価値を入れるのに使うので、大きい順にしたい。
 		sort.Sort(sort.Reverse(table))
@@ -56,20 +56,20 @@ func TestPut(t *testing.T) {
 	}
 	{
 		table := newTable(3)
-		table.put(newRecord(120, ""))
+		table.put(newRecord(120, "", "", ""))
 		assert(table.records[0].score, 120)
-		table.put(newRecord(140, ""))
+		table.put(newRecord(140, "", "", ""))
 		assert(table.records[0].score, 140)
 		assert(table.records[1].score, 120)
-		table.put(newRecord(100, ""))
+		table.put(newRecord(100, "", "", ""))
 		assert(table.records[0].score, 140)
 		assert(table.records[1].score, 120)
 		assert(table.records[2].score, 100)
-		table.put(newRecord(160, ""))
+		table.put(newRecord(160, "", "", ""))
 		assert(table.records[0].score, 160)
 		assert(table.records[1].score, 140)
 		assert(table.records[2].score, 120)
-		table.put(newRecord(100, ""))
+		table.put(newRecord(100, "", "", ""))
 		assert(table.records[0].score, 160)
 		assert(table.records[1].score, 140)
 		assert(table.records[2].score, 120)

@@ -10,10 +10,12 @@ type Record struct {
 	parent_sfen     string
 }
 
-func newRecord(score int, move_str string) *Record {
+func newRecord(score int, move_str, parent_move_str, parent_sfen string) *Record {
 	record := Record{
-		score:    score,
-		move_str: move_str,
+		score:           score,
+		move_str:        move_str,
+		parent_move_str: parent_move_str,
+		parent_sfen:     parent_sfen,
 	}
 	return &record
 }
