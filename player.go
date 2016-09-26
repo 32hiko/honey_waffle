@@ -143,6 +143,9 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 			}
 		}
 	}
+	// 何度もチャンネルに現時点での最善手を送るようにする。
+	// 時間がきたら、その時点での最善手を呼び出し元に返す。
+	// つまり、呼び出し元で時間配分をする。
 
 	/*
 		3.自分の手のうち、上位n件はもう1手読む
@@ -250,7 +253,11 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		}
 		// 成る手を評価する
 		if move.promote {
-			score += 300
+			if move.kind < KIN {
+				score += int(KIN-move.kind) * 100
+			} else {
+				score += int(KIN) * 100
+			}
 		}
 	}
 
