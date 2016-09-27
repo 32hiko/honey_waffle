@@ -73,8 +73,8 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 	current_ban := ban
 	base_sfen := current_ban.toSFEN(true)
 	teban := current_ban.teban
-	table := newTable(moves.count())
-	// table := newTable(10)
+	// table := newTable(moves.count())
+	table := newTable(10)
 
 	/*
 		1.最初の手を全部評価する
@@ -123,7 +123,7 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 			// 上記goroutineの結果待ち
 			record := <-move_ch
 			next_table := newTable(1)
-			usiResponse("info string " + record.parent_move_str + " " + record.move_str + " " + fmt.Sprint(record.score))
+			// usiResponse("info string " + record.parent_move_str + " " + record.move_str + " " + fmt.Sprint(record.score))
 			new_record := newRecord(record.score, record.move_str, record.parent_move_str, record.parent_sfen)
 			next_table.put(new_record)
 			player.cache[current_ban.tesuu+1][record.parent_sfen] = next_table
@@ -163,7 +163,13 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 				if next_table.count > 0 {
 					next_record := next_table.records[0]
 					if record.move_str == next_record.parent_move_str {
-						// usiResponse("info string " + record.move_str + " " + fmt.Sprint(record.score-next_record.score))
+						usiResponse(
+							"info score cp " +
+								fmt.Sprint(record.score-next_record.score) +
+								" pv " +
+								next_record.parent_move_str +
+								" " +
+								next_record.move_str)
 						select_table.put(newRecord(record.score-next_record.score, record.move_str, "", ""))
 					}
 				}
@@ -209,7 +215,8 @@ func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
 	next_ban := ban
 	base_sfen := next_ban.toSFEN(true)
 	teban := next_ban.teban
-	table := newTable(moves.count())
+	// table := newTable(moves.count())
+	table := newTable(1)
 	/*
 		1.最初の手を全部評価する
 	*/

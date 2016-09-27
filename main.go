@@ -148,22 +148,12 @@ func doGo(command string) {
 		close(stop_ch)
 		result := <-result_ch
 		usiResponseBy(result)
-		// 時間切れになる前に投了する
-		// usiResponse("bestmove " + "resign")
 	}
-
-	// 仮実装
-	// usiResponse("info time 1 depth 1 nodes 1 score cp " + fmt.Sprint(score) + " pv" + bestmove) // 表示されない
-	// time.Sleep(1000 * time.Millisecond)
-	// time.Sleep(1000 * time.Millisecond)
-	// usiResponse("info nodes 12345 nps 67890") // 表の見出しに表示された。
-	// time.Sleep(1000 * time.Millisecond)
 }
 
 func usiResponseBy(sr SearchResult) {
 	bestmove := sr.bestmove
-	usiResponse("info string " + fmt.Sprint(sr.score)) // 読み筋のところに表示された。
-	usiResponse("info string " + bestmove + " test")   // 読み筋のところに表示された。
+	usiResponse("info depth 1 nodes 1 score cp " + fmt.Sprint(sr.score) + " pv " + bestmove)
 	usiResponse("bestmove " + bestmove)
 }
 
