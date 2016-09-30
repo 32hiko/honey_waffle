@@ -18,6 +18,7 @@ func TestEvaluate(t *testing.T) {
 		result_ch := make(chan SearchResult)
 		stop_ch := make(chan string)
 		go player.search(result_ch, stop_ch, 1000)
+		close(stop_ch)
 		sr := <-result_ch
 		fmt.Println(sr.bestmove + " " + fmt.Sprint(sr.score))
 		assert(0, 0)

@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand"
+	"time"
+)
 
 type PlayerConfig struct {
 	btime   int
@@ -301,5 +305,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		score += int(NO_KIND-move.kind) * 5
 	}
 
+	rand.Seed(time.Now().UnixNano())
+	score += rand.Intn(10)
 	return
 }
