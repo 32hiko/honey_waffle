@@ -40,21 +40,20 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 		return
 	}
 	// TODO 定跡があればそこから指す
-
+	bestmove := newSearchResult(moves.moves_map[0].toUSIMove(), 0)
 	search_ch := make(chan SearchResult)
 	go player.evaluate(search_ch, ban, moves)
 	usiResponse("info string " + "searching...")
 	for {
 		select {
 		case result := <-search_ch:
-			// 今後の作りとしては、深さnで読ませる→まだ時間ある→深さn+2で読ませる、と深めていく感じで。
-			result_ch <- result
-			return
+			bestmove = result
+			usiResponse("info score cp " + fmt.Sprint(bestmove.score) + " pv " + bestmove.bestmove)
 		case _, open := <-stop_ch:
 			// mainにて探索タイムアウト
 			if !open {
 				// TODO:自殺手を含んでいるので、せめて1手読みの最善手を返したい
-				result_ch <- newSearchResult(moves.moves_map[0].toUSIMove(), 0)
+				result_ch <- bestmove
 				return
 			}
 		}

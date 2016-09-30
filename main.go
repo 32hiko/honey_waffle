@@ -124,13 +124,18 @@ func doGo(command string) {
 
 	// 使える時間（ミリ秒）
 	teban := master_ban.teban
-	var my_ms int
+	var my_ms, available_ms int
 	if teban.isSente() {
 		my_ms = btime + byoyomi
 	} else {
 		my_ms = wtime + byoyomi
 	}
-	available_ms := my_ms - SAFETY_MS
+	available_ms = byoyomi - SAFETY_MS
+	if my_ms > 901*1000 {
+		if (my_ms/50)-SAFETY_MS > available_ms {
+			available_ms = (my_ms / 50) - SAFETY_MS
+		}
+	}
 
 	// mainでの時間管理
 	main_timer := time.NewTimer(time.Duration(available_ms) * time.Millisecond)
