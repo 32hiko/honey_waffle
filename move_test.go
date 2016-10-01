@@ -189,3 +189,18 @@ func TestGenerateAigomaMoves(t *testing.T) {
 	}
 	fmt.Println("TestGenerateAigomaMoves ok")
 }
+
+func TestIsUchiFuDume(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		assert(isUchiFuDume("P*2c"), true)
+		assert(isUchiFuDume("p*2c"), true)
+		assert(isUchiFuDume("B*2c"), false)
+		assert(isUchiFuDume("2d2c"), false)
+	}
+	fmt.Println("TestIsUchiFuDume ok")
+}

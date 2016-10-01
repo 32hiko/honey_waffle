@@ -156,9 +156,13 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 					next_record := next_table.records[0]
 					// usiResponse("info string " + next_record.parent_move_str + " " + next_record.move_str + " " + fmt.Sprint(next_record.score))
 					if next_record.score == -9999 {
-						usiResponse("info string tsumi!")
-						result_ch <- newSearchResult(next_record.parent_move_str, 9999)
-						return
+						if isUchiFuDume(next_record.parent_move_str) {
+							// 打ち歩詰めを回避する
+						} else {
+							usiResponse("info string tsumi!")
+							result_ch <- newSearchResult(next_record.parent_move_str, 9999)
+							return
+						}
 					}
 				}
 			}

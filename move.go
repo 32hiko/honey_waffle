@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 type Moves struct {
 	moves_map map[int]*Move
 }
@@ -58,6 +60,20 @@ func (move *Move) toUSIMove() string {
 		base += "+"
 	}
 	return base
+}
+
+func isUchiFuDume(move_str string) bool {
+	from_str := move_str[0:2]
+	is_drop := strings.Index(from_str, "*")
+	if is_drop == -1 {
+		return false
+	} else {
+		kind, _ := str2KindAndTeban(from_str)
+		if kind == FU {
+			return true
+		}
+	}
+	return false
 }
 
 func generateAllMoves(ban *Ban) *Moves {
