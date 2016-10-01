@@ -79,69 +79,87 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 	// table := newTable(moves.count())
 	table := newTable(10)
 
-	/*
-		1.最初の手を全部評価する
-	*/
-	{
-		move_ch := make(chan Record)
-		// 全部の手の自殺手チェックをし、評価を出す
-		for _, move := range moves.moves_map {
-			go checkAndEvaluate(move_ch, base_sfen, move, teban)
-		}
-		for i := 0; i < moves.count(); i++ {
-			// 上記goroutineの結果待ち
-			record := <-move_ch
-			if record.score == -9999 {
-				// 自殺手
-			} else {
-				table.put(&record)
-				// TODO: 王手なら、別のテーブルにも入れてそちらで1手だけ読む。
+	cached_table, ok := player.cache[current_ban.tesuu][base_sfen]
+	if ok {
+		// すでに読んだ手
+		usiResponse("info string cache hit!")
+		table = cached_table
+	} else {
+		/*
+			1.最初の手を全部評価する
+		*/
+		{
+			move_ch := make(chan Record)
+			oute_table := newTable(10)
+			// 全部の手の自殺手チェックをし、評価を出す
+			for _, move := range moves.moves_map {
+				go checkAndEvaluate(move_ch, base_sfen, move, teban)
 			}
+			for i := 0; i < moves.count(); i++ {
+				// 上記goroutineの結果待ち
+				record := <-move_ch
+				if record.score == -9999 {
+					// 自殺手
+				} else {
+					if record.is_oute {
+						// 王手なら、別のテーブルにも入れてそちらで読む。
+						oute_table.put(&record)
+					} else {
+						table.put(&record)
+					}
+				}
+			}
+			if oute_table.count > 0 {
+				new_table := newTable(oute_table.count + table.count)
+				new_table.addAll(table)
+				new_table.addAll(oute_table)
+				table = new_table
+			}
+			if table.count == 0 {
+				// ここで手がないのは自分が詰んでいる。
+				result_ch <- newSearchResult("resign", 0)
+				return
+			}
+			player.cache[current_ban.tesuu][base_sfen] = table
 		}
-		if table.count == 0 {
-			// ここで手がないのは自分が詰んでいる。
-			result_ch <- newSearchResult("resign", 0)
-			return
-		}
-		player.cache[current_ban.tesuu][base_sfen] = table
-	}
 
-	/*
-		2.上位n件のmoveから相手の全応手を出す
-	*/
-	{
-		move_ch := make(chan Record)
-		table_count := table.count
-		for table_index, record := range table.records {
-			// tableは、recordを入れていなくてもwidth分回ってしまう。countでガードする。
-			if table_count == table_index {
-				break
+		/*
+			2.上位n件のmoveから相手の全応手を出す
+		*/
+		{
+			move_ch := make(chan Record)
+			table_count := table.count
+			for table_index, record := range table.records {
+				// tableは、recordを入れていなくてもwidth分回ってしまう。countでガードする。
+				if table_count == table_index {
+					break
+				}
+				// 上位n件にするなら、ここでforを抜ける
+				// usiResponse("info string " + record.move_str + " " + fmt.Sprint(record.score))
+				// 相手の最善手1手だけを取得する
+				go player.doEvaluate(move_ch, base_sfen, record.move_str)
 			}
-			// 上位n件にするなら、ここでforを抜ける
-			// usiResponse("info string " + record.move_str + " " + fmt.Sprint(record.score))
-			// 相手の最善手1手だけを取得する
-			go player.doEvaluate(move_ch, base_sfen, record.move_str)
-		}
-		for i := 0; i < table_count; i++ {
-			// 上記goroutineの結果待ち
-			record := <-move_ch
-			next_table := newTable(1)
-			// usiResponse("info string " + record.parent_move_str + " " + record.move_str + " " + fmt.Sprint(record.score))
-			new_record := newRecord(record.score, record.move_str, record.parent_move_str, record.parent_sfen)
-			next_table.put(new_record)
-			player.cache[current_ban.tesuu+1][record.parent_sfen] = next_table
-			// usiResponse("info string " + fmt.Sprint(len(player.cache[current_ban.tesuu+1])))
-		}
-		next_tables := player.cache[current_ban.tesuu+1]
-		for _, next_table := range next_tables {
-			// usiResponse("info string " + fmt.Sprint(i))
-			if next_table.count > 0 {
-				next_record := next_table.records[0]
-				// usiResponse("info string " + next_record.parent_move_str + " " + next_record.move_str + " " + fmt.Sprint(next_record.score))
-				if next_record.score == -9999 {
-					usiResponse("info string tsumi!")
-					result_ch <- newSearchResult(next_record.parent_move_str, 9999)
-					return
+			for i := 0; i < table_count; i++ {
+				// 上記goroutineの結果待ち
+				record := <-move_ch
+				next_table := newTable(1)
+				// usiResponse("info string " + record.parent_move_str + " " + record.move_str + " " + fmt.Sprint(record.score))
+				new_record := newRecord(record.score, record.move_str, record.parent_move_str, record.parent_sfen)
+				next_table.put(new_record)
+				player.cache[current_ban.tesuu+1][record.parent_sfen] = next_table
+				// usiResponse("info string " + fmt.Sprint(len(player.cache[current_ban.tesuu+1])))
+			}
+			next_tables := player.cache[current_ban.tesuu+1]
+			for _, next_table := range next_tables {
+				// usiResponse("info string " + fmt.Sprint(i))
+				if next_table.count > 0 {
+					next_record := next_table.records[0]
+					// usiResponse("info string " + next_record.parent_move_str + " " + next_record.move_str + " " + fmt.Sprint(next_record.score))
+					if next_record.score == -9999 {
+						usiResponse("info string tsumi!")
+						result_ch <- newSearchResult(next_record.parent_move_str, 9999)
+						return
+					}
 				}
 			}
 		}
@@ -199,6 +217,9 @@ func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
 		record.score = -9999
 	} else {
 		record.score = evaluateMove(next_ban, move)
+		if next_ban.isOute(teban.aite()) {
+			record.is_oute = true
+		}
 	}
 	ch <- *(record)
 }

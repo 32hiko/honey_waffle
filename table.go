@@ -54,6 +54,15 @@ func (table *Table) put(record *Record) {
 	}
 }
 
+func (table *Table) addAll(to_add *Table) {
+	for i, r := range to_add.records {
+		if i == to_add.count {
+			break
+		}
+		table.put(r)
+	}
+}
+
 // sort.Interface
 func (table Table) Len() int {
 	return table.count
