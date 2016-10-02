@@ -73,8 +73,43 @@ func newSearchResult(bm string, sc int) SearchResult {
 }
 
 func (player *Player) evaluateMain(result_ch chan SearchResult, ban *Ban, moves *Moves) {
+	// 現局面から、自分の手、相手の応手をひと通り生成
 	first_result := player.evaluate(ban, moves)
-	result_ch <- first_result
+	// 2手の読みから最初の選択(詰み以外、first_result自体には意味がない)
+	if first_result.score == 9999 || first_result.score == -9999 {
+		result_ch <- first_result
+		return
+	}
+	// 自分の手、相手の応手を踏まえて、自分の手を選択する
+	base_sfen := ban.toSFEN(true)
+	table := player.cache[ban.tesuu][base_sfen]
+	select_table := newTable(table.count)
+	{
+		for table_index, record := range table.records {
+			// tableは、recordを入れていなくてもwidth分回ってしまう。countでガードする。
+			if table.count == table_index {
+				break
+			}
+			next_tables := player.cache[ban.tesuu+1]
+			for _, next_table := range next_tables {
+				if next_table.count > 0 {
+					next_record := next_table.records[0]
+					if record.move_str == next_record.parent_move_str {
+						usiResponse(
+							"info score cp " +
+								fmt.Sprint(record.score-next_record.score) +
+								" pv " +
+								next_record.parent_move_str +
+								" " +
+								next_record.move_str)
+						select_table.put(newRecord(record.score-next_record.score, record.move_str, "", ""))
+					}
+				}
+			}
+		}
+	}
+	result_ch <- select_table.records[0].toSearchResult()
+	return
 	// 何度もチャンネルに現時点での最善手を送るようにする。
 	// 時間がきたら、その時点での最善手を呼び出し元に返す。
 	// つまり、呼び出し元で時間配分をする。
@@ -128,7 +163,7 @@ func (player *Player) evaluate(ban *Ban, moves *Moves) SearchResult {
 			}
 			if table.count == 0 {
 				// ここで手がないのは自分が詰んでいる。
-				return newSearchResult("resign", 0)
+				return newSearchResult("resign", -9999)
 			}
 			player.cache[current_ban.tesuu][base_sfen] = table
 		}
@@ -176,34 +211,7 @@ func (player *Player) evaluate(ban *Ban, moves *Moves) SearchResult {
 			}
 		}
 	}
-	// 自分の手、相手の応手を踏まえて、自分の手を選択する
-	current_table := table
-	select_table := newTable(current_table.count)
-	{
-		for table_index, record := range current_table.records {
-			// tableは、recordを入れていなくてもwidth分回ってしまう。countでガードする。
-			if current_table.count == table_index {
-				break
-			}
-			next_tables := player.cache[current_ban.tesuu+1]
-			for _, next_table := range next_tables {
-				if next_table.count > 0 {
-					next_record := next_table.records[0]
-					if record.move_str == next_record.parent_move_str {
-						usiResponse(
-							"info score cp " +
-								fmt.Sprint(record.score-next_record.score) +
-								" pv " +
-								next_record.parent_move_str +
-								" " +
-								next_record.move_str)
-						select_table.put(newRecord(record.score-next_record.score, record.move_str, "", ""))
-					}
-				}
-			}
-		}
-	}
-	return select_table.records[0].toSearchResult()
+	return table.records[0].toSearchResult()
 }
 
 func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
