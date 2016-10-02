@@ -46,7 +46,7 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 	// TODO 定跡があればそこから指す
 	bestmove := newSearchResult(moves.moves_map[0].toUSIMove(), 0)
 	search_ch := make(chan SearchResult)
-	go player.evaluate(search_ch, ban, moves)
+	go player.evaluateMain(search_ch, ban, moves)
 	usiResponse("info string " + "searching...")
 	for {
 		select {
@@ -72,7 +72,18 @@ func newSearchResult(bm string, sc int) SearchResult {
 	return sr
 }
 
-func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Moves) {
+func (player *Player) evaluateMain(result_ch chan SearchResult, ban *Ban, moves *Moves) {
+	first_result := player.evaluate(ban, moves)
+	result_ch <- first_result
+	// 何度もチャンネルに現時点での最善手を送るようにする。
+	// 時間がきたら、その時点での最善手を呼び出し元に返す。
+	// つまり、呼び出し元で時間配分をする。
+	/*
+		3.自分の手のうち、上位n件はもう1手読む
+	*/
+}
+
+func (player *Player) evaluate(ban *Ban, moves *Moves) SearchResult {
 	current_ban := ban
 	base_sfen := current_ban.toSFEN(true)
 	teban := current_ban.teban
@@ -117,12 +128,10 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 			}
 			if table.count == 0 {
 				// ここで手がないのは自分が詰んでいる。
-				result_ch <- newSearchResult("resign", 0)
-				return
+				return newSearchResult("resign", 0)
 			}
 			player.cache[current_ban.tesuu][base_sfen] = table
 		}
-
 		/*
 			2.上位n件のmoveから相手の全応手を出す
 		*/
@@ -160,21 +169,14 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 							// 打ち歩詰めを回避する
 						} else {
 							usiResponse("info string tsumi!")
-							result_ch <- newSearchResult(next_record.parent_move_str, 9999)
-							return
+							return newSearchResult(next_record.parent_move_str, 9999)
 						}
 					}
 				}
 			}
 		}
 	}
-	// 何度もチャンネルに現時点での最善手を送るようにする。
-	// 時間がきたら、その時点での最善手を呼び出し元に返す。
-	// つまり、呼び出し元で時間配分をする。
-
-	/*
-		3.自分の手のうち、上位n件はもう1手読む
-	*/
+	// 自分の手、相手の応手を踏まえて、自分の手を選択する
 	current_table := table
 	select_table := newTable(current_table.count)
 	{
@@ -201,13 +203,7 @@ func (player *Player) evaluate(result_ch chan SearchResult, ban *Ban, moves *Mov
 			}
 		}
 	}
-	if select_table.count > 0 {
-		result_ch <- select_table.records[0].toSearchResult()
-	} else {
-		result_ch <- table.records[0].toSearchResult()
-	}
-
-	return
+	return select_table.records[0].toSearchResult()
 }
 
 func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
