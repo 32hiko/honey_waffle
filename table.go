@@ -8,6 +8,7 @@ type Record struct {
 	is_oute         bool
 	parent_move_str string
 	parent_sfen     string
+	child_record    *Record
 }
 
 func newRecord(score int, move_str, parent_move_str, parent_sfen string) *Record {
@@ -22,6 +23,10 @@ func newRecord(score int, move_str, parent_move_str, parent_sfen string) *Record
 
 func (record *Record) toSearchResult() SearchResult {
 	return newSearchResult(record.move_str, record.score)
+}
+
+func (record *Record) addChild(c *Record) {
+	record.child_record = c
 }
 
 type Table struct {

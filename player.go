@@ -102,20 +102,47 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, ban *Ban, moves 
 								next_record.parent_move_str +
 								" " +
 								next_record.move_str)
-						select_table.put(newRecord(record.score-next_record.score, record.move_str, "", ""))
+						r := newRecord(record.score-next_record.score, record.move_str, "", "")
+						r.addChild(next_record)
+						select_table.put(r)
 					}
 				}
 			}
 		}
 	}
-	result_ch <- select_table.records[0].toSearchResult()
-	return
-	// 何度もチャンネルに現時点での最善手を送るようにする。
-	// 時間がきたら、その時点での最善手を呼び出し元に返す。
-	// つまり、呼び出し元で時間配分をする。
+	first_result = select_table.records[0].toSearchResult()
+	result_ch <- first_result
+
 	/*
 		3.自分の手のうち、上位n件はもう1手読む
 	*/
+	{
+		current_best := newRecord(first_result.score, first_result.bestmove, "", "")
+		for table_index, record := range select_table.records {
+			if select_table.count == table_index {
+				break
+			}
+			new_ban := newBanFromSFEN(base_sfen)
+			new_ban.applySFENMove(record.move_str)
+			new_ban.applySFENMove(record.child_record.move_str)
+			new_moves := generateAllMoves(new_ban)
+			if new_moves.count() == 0 {
+				// 相手の最善手で自分が詰んでいる
+			} else {
+				second_result := player.evaluate(new_ban, new_moves)
+				if second_result.score == 9999 {
+					result_ch <- record.toSearchResult()
+					return
+				}
+				record.score = record.score + second_result.score
+				if record.score > current_best.score {
+					result_ch <- record.toSearchResult()
+					current_best = record
+				}
+			}
+		}
+	}
+	return
 }
 
 func (player *Player) evaluate(ban *Ban, moves *Moves) SearchResult {
