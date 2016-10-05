@@ -366,12 +366,23 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	// 駒がどいたことによる影響
 	if teban_kiki.count(move.from) > 0 {
 		score += teban_kiki.count(move.from) * 5
+	} else {
+		// 利きがない自陣のマスを開ける手は減点
+		if my_teban.isSente() {
+			if move.from.dan > 6 {
+				score -= 50
+			}
+		} else {
+			if move.from.dan < 4 {
+				score -= 50
+			}
+		}
 	}
 
 	// 逃げる手を評価
 	if aite_kiki.count(move.from) > 0 {
 		if aite_kiki.count(move.to) == 0 {
-			score += int(move.kind+1) * 80
+			score += int(move.kind.demote()+1) * 80
 		}
 	}
 
