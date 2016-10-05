@@ -304,60 +304,23 @@ func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
 
 func evaluateMove(ban *Ban, move *Move) (score int) {
 	score = 0
+
+	// 取る手、成る手の評価
+	// 駒を取る手は駒の価値分加算する
+	if move.cap_kind != NO_KIND {
+		score += int(move.cap_kind.demote()+1) * 100
+	}
+	// 成る手を評価する
+	if move.promote {
+		if move.kind < KIN {
+			score += int(KIN-move.kind) * 100
+		} else {
+			score += int(KIN) * 100
+		}
+	}
+
 	// 相手の手番になっているので、自分の手番が相手（ややこしい）
 	my_teban := ban.teban.aite()
-
-	if move.isDrop() {
-		// 打つ手
-	} else {
-		// 移動する手
-		// 駒を取る手は駒の価値分加算する
-		if move.cap_kind != NO_KIND {
-			score += int((move.cap_kind.demote() + 1) * 100)
-		}
-		// 成る手を評価する
-		if move.promote {
-			if move.kind < KIN {
-				score += int(KIN-move.kind) * 100
-			} else {
-				score += int(KIN) * 100
-			}
-		}
-	}
-
-	my_reverse_kiki := ban.komap.getTebanReverseKiki(my_teban)
-	// 今の手の利きの数を加算する
-	kiki_masu := my_reverse_kiki.kiki_map[move.to]
-	for _, kiki_to := range kiki_masu {
-		koma, exists := ban.komap.all_koma[kiki_to]
-		if exists {
-			if koma.teban == my_teban.aite() {
-				// 相手の駒に当てる手を評価
-				score += int((koma.kind.demote() + 1) * 5)
-			} else {
-				if koma.kind == GYOKU {
-					// 自玉に紐をつける手を評価してみる
-					score += 10
-				}
-			}
-		}
-	}
-	teban_kiki := ban.getTebanKiki(my_teban)
-	aite_kiki := ban.getTebanKiki(my_teban.aite())
-	// 移動元について
-	// 駒がどいたことによる影響
-	if teban_kiki.count(move.from) > 0 {
-		score += teban_kiki.count(move.from) * 5
-	}
-	// 移動先について
-	// 駒がきたことによる影響
-	// 相手の利きが多いマスへの手は減点する
-	if aite_kiki.count(move.to) >= teban_kiki.count(move.to) {
-		if move.cap_kind == NO_KIND {
-			score -= int((move.kind.demote() + 1) * 100)
-		}
-	}
-
 	// 前進する手を評価
 	if move.isForward(my_teban) {
 		score += int(NO_KIND-move.kind) * 5
@@ -366,5 +329,54 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	// 指運
 	rand.Seed(time.Now().UnixNano())
 	score += rand.Intn(20)
+
+	// 利きのチェック
+	teban_kiki := ban.getTebanKiki(my_teban)
+	aite_kiki := ban.getTebanKiki(my_teban.aite())
+	teban_koma := ban.getTebanKoma(my_teban)
+	for masu, koma := range teban_koma {
+		if masu == KOMADAI {
+			continue
+		}
+		// 紐付いている枚数ごとに加点
+		if teban_kiki.count(masu) > 0 {
+			score += int(koma.kind+1) * 1
+		}
+		// ただ（または数的不利）な駒ごとに減点
+		if aite_kiki.count(masu) > teban_kiki.count(masu) {
+			score -= int(koma.kind+1) * 90
+		}
+
+	}
+	aite_koma := ban.getTebanKoma(my_teban.aite())
+	for masu, koma := range aite_koma {
+		if masu == KOMADAI {
+			continue
+		}
+		// ただ（または数的不利）な駒ごとに加点
+		if teban_kiki.count(masu) > aite_kiki.count(masu) {
+			score += int(koma.kind+1) * 1
+		}
+	}
+
+	// 移動元について
+	// 駒がどいたことによる影響
+	if teban_kiki.count(move.from) > 0 {
+		score += teban_kiki.count(move.from) * 5
+	}
+
+	// 逃げる手を評価
+	if aite_kiki.count(move.from) > 0 {
+		if aite_kiki.count(move.to) == 0 {
+			score += int(move.kind+1) * 80
+		}
+	}
+
+	if move.isDrop() {
+		// 打つ手の場合、ただ捨てを減らしたい
+		if aite_kiki.count(move.to) > 0 {
+			score -= int(move.kind+1) * 100
+		}
+	}
 	return
 }
