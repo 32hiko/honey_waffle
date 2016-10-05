@@ -305,7 +305,7 @@ func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
 func evaluateMove(ban *Ban, move *Move) (score int) {
 	score = 0
 	// 相手の手番になっているので、自分の手番が相手（ややこしい）
-	teban := ban.teban.aite()
+	my_teban := ban.teban.aite()
 
 	if move.isDrop() {
 		// 打つ手
@@ -325,13 +325,13 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		}
 	}
 
-	reverse_kiki := ban.komap.getTebanReverseKiki(teban)
+	my_reverse_kiki := ban.komap.getTebanReverseKiki(my_teban)
 	// 今の手の利きの数を加算する
-	kiki_masu := reverse_kiki.kiki_map[move.to]
+	kiki_masu := my_reverse_kiki.kiki_map[move.to]
 	for _, kiki_to := range kiki_masu {
 		koma, exists := ban.komap.all_koma[kiki_to]
 		if exists {
-			if koma.teban == ban.teban {
+			if koma.teban == my_teban.aite() {
 				// 相手の駒に当てる手を評価
 				score += int((koma.kind.demote() + 1) * 5)
 			} else {
@@ -342,8 +342,8 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 			}
 		}
 	}
-	teban_kiki := ban.getTebanKiki(teban)
-	aite_kiki := ban.getTebanKiki(teban.aite())
+	teban_kiki := ban.getTebanKiki(my_teban)
+	aite_kiki := ban.getTebanKiki(my_teban.aite())
 	// 移動元について
 	// 駒がどいたことによる影響
 	if teban_kiki.count(move.from) > 0 {
@@ -359,7 +359,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	}
 
 	// 前進する手を評価
-	if move.isForward(teban) {
+	if move.isForward(my_teban) {
 		score += int(NO_KIND-move.kind) * 5
 	}
 

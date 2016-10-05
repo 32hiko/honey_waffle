@@ -96,6 +96,7 @@ func TestGenerateKiki(t *testing.T) {
 
 		reverse_kiki := komap.getTebanReverseKiki(SENTE)
 		assert(reverse_kiki.count(masu55), 1)
+		assert(reverse_kiki.kiki_map[Masu{5, 5}][0], masu54)
 	}
 	{
 		masu55 := newMasu(5, 5)
