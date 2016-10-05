@@ -309,8 +309,6 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 
 	if move.isDrop() {
 		// 打つ手
-		// 暫定的に、打つ手を評価してみる
-		score += int((move.kind + 1) * 1)
 	} else {
 		// 移動する手
 		// 駒を取る手は駒の価値分加算する
@@ -330,13 +328,17 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	reverse_kiki := ban.komap.getTebanReverseKiki(teban)
 	// 今の手の利きの数を加算する
 	kiki_masu := reverse_kiki.kiki_map[move.to]
-	// score += reverse_kiki.count(move.to)
 	for _, kiki_to := range kiki_masu {
 		koma, exists := ban.komap.all_koma[kiki_to]
 		if exists {
 			if koma.teban == ban.teban {
 				// 相手の駒に当てる手を評価
 				score += int((koma.kind.demote() + 1) * 5)
+			} else {
+				if koma.kind == GYOKU {
+					// 自玉に紐をつける手を評価してみる
+					score += 10
+				}
 			}
 		}
 	}
@@ -350,7 +352,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	// 移動先について
 	// 駒がきたことによる影響
 	// 相手の利きが多いマスへの手は減点する
-	if aite_kiki.count(move.to) > teban_kiki.count(move.to) {
+	if aite_kiki.count(move.to) >= teban_kiki.count(move.to) {
 		if move.cap_kind == NO_KIND {
 			score -= int((move.kind.demote() + 1) * 100)
 		}
@@ -361,7 +363,8 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		score += int(NO_KIND-move.kind) * 5
 	}
 
+	// 指運
 	rand.Seed(time.Now().UnixNano())
-	score += rand.Intn(10)
+	score += rand.Intn(20)
 	return
 }
