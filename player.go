@@ -35,6 +35,14 @@ func newPlayer(ban *Ban, config *PlayerConfig) *Player {
 	return &player
 }
 
+func newSearchResult(bm string, sc int) SearchResult {
+	sr := SearchResult{
+		bestmove: bm,
+		score:    sc,
+	}
+	return sr
+}
+
 func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, available_ms int) {
 	ban := player.master
 	moves := generateAllMoves(ban)
@@ -46,7 +54,8 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 	// TODO 定跡があればそこから指す
 	bestmove := newSearchResult(moves.moves_map[0].toUSIMove(), 0)
 	search_ch := make(chan SearchResult)
-	go player.evaluateMain(search_ch, ban, moves)
+	eval_stop_ch := make(chan string)
+	go player.evaluateMain(search_ch, eval_stop_ch, ban, moves)
 	usiResponse("info string " + "searching...")
 	for {
 		select {
@@ -57,6 +66,7 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 			// mainにて探索タイムアウト
 			if !open {
 				// TODO:自殺手を含んでいるので、せめて1手読みの最善手を返したい
+				close(eval_stop_ch)
 				result_ch <- bestmove
 				return
 			}
@@ -64,17 +74,9 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 	}
 }
 
-func newSearchResult(bm string, sc int) SearchResult {
-	sr := SearchResult{
-		bestmove: bm,
-		score:    sc,
-	}
-	return sr
-}
-
-func (player *Player) evaluateMain(result_ch chan SearchResult, ban *Ban, moves *Moves) {
+func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan string, ban *Ban, moves *Moves) {
 	// 現局面から、自分の手、相手の応手をひと通り生成
-	first_result := player.evaluate(ban, moves)
+	first_result := player.evaluate(ban, moves, 10)
 	// 2手の読みから最初の選択(詰み以外、first_result自体には意味がない)
 	if first_result.score == 9999 || first_result.score == -9999 {
 		result_ch <- first_result
@@ -129,10 +131,11 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, ban *Ban, moves 
 			if new_moves.count() == 0 {
 				// 相手の最善手で自分が詰んでいる
 			} else {
-				second_result := player.evaluate(new_ban, new_moves)
+				second_result := player.evaluate(new_ban, new_moves, 10)
 				if second_result.score == 9999 {
 					result_ch <- record.toSearchResult()
-					return
+					current_best = record
+					// return
 				}
 				record.score = record.score + second_result.score
 				if record.score > current_best.score {
@@ -142,15 +145,21 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, ban *Ban, moves 
 			}
 		}
 	}
-	return
+	for {
+		select {
+		case _, open := <-stop_ch:
+			if !open {
+				return
+			}
+		}
+	}
 }
 
-func (player *Player) evaluate(ban *Ban, moves *Moves) SearchResult {
+func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
 	current_ban := ban
 	base_sfen := current_ban.toSFEN(true)
 	teban := current_ban.teban
-	// table := newTable(moves.count())
-	table := newTable(10)
+	table := newTable(width)
 
 	cached_table, ok := player.cache[current_ban.tesuu][base_sfen]
 	if ok {
@@ -206,7 +215,6 @@ func (player *Player) evaluate(ban *Ban, moves *Moves) SearchResult {
 					break
 				}
 				// 上位n件にするなら、ここでforを抜ける
-				// usiResponse("info string " + record.move_str + " " + fmt.Sprint(record.score))
 				// 相手の最善手1手だけを取得する
 				go player.doEvaluate(move_ch, base_sfen, record.move_str)
 			}
@@ -214,23 +222,18 @@ func (player *Player) evaluate(ban *Ban, moves *Moves) SearchResult {
 				// 上記goroutineの結果待ち
 				record := <-move_ch
 				next_table := newTable(1)
-				// usiResponse("info string " + record.parent_move_str + " " + record.move_str + " " + fmt.Sprint(record.score))
 				new_record := newRecord(record.score, record.move_str, record.parent_move_str, record.parent_sfen)
 				next_table.put(new_record)
 				player.cache[current_ban.tesuu+1][record.parent_sfen] = next_table
-				// usiResponse("info string " + fmt.Sprint(len(player.cache[current_ban.tesuu+1])))
 			}
 			next_tables := player.cache[current_ban.tesuu+1]
 			for _, next_table := range next_tables {
-				// usiResponse("info string " + fmt.Sprint(i))
 				if next_table.count > 0 {
 					next_record := next_table.records[0]
-					// usiResponse("info string " + next_record.parent_move_str + " " + next_record.move_str + " " + fmt.Sprint(next_record.score))
 					if next_record.score == -9999 {
 						if isUchiFuDume(next_record.parent_move_str) {
 							// 打ち歩詰めを回避する
 						} else {
-							usiResponse("info string tsumi!")
 							return newSearchResult(next_record.parent_move_str, 9999)
 						}
 					}
@@ -344,7 +347,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		}
 		// ただ（または数的不利）な駒ごとに減点
 		if aite_kiki.count(masu) > teban_kiki.count(masu) {
-			score -= int(koma.kind+1) * 90
+			score -= int(koma.kind.demote()+1) * 90
 		}
 
 	}
