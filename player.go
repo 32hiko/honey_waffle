@@ -72,7 +72,7 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 			bestmove = result
 			usiResponse("info score cp " + fmt.Sprint(bestmove.score) + " pv " + bestmove.bestmove)
 		case _, open := <-stop_ch:
-		// mainにて探索タイムアウト
+			// mainにて探索タイムアウト
 			if !open {
 				// TODO:自殺手を含んでいるので、せめて1手読みの最善手を返したい
 				close(eval_stop_ch)
@@ -152,13 +152,13 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 					current_best = record
 				}
 			}
-		}
-	}
-	for {
-		select {
-		case _, open := <-stop_ch:
-			if !open {
-				return
+
+			// 無限ループ抜ける用
+			select {
+			case _, open := <-stop_ch:
+				if !open {
+					return
+				}
 			}
 		}
 	}

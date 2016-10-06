@@ -45,3 +45,31 @@ func TestCheckAndEvaluate(t *testing.T) {
 	}
 	fmt.Println("TestCheckAndEvaluate ok")
 }
+
+func TestGoroutine(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		setUp()
+		ch := make(chan Record)
+		sfen := SFEN_STARTPOS
+		move := newMove(newMasu(7, 7), newMasu(7, 6), FU)
+		go checkAndEvaluate(ch, sfen, move, SENTE)
+		for {
+			// 無限ループ。このselectが何回も実行される。
+			select {
+			case r := <-ch:
+				assert(len(r.move_str), 4)
+				fmt.Println("received ch")
+				fmt.Println("TestGoroutine ok")
+				return
+			default:
+				// チャンネルから受信したとき以外はこちらなので、基本ずっと待ち。
+				fmt.Println("waiting...")
+			}
+		}
+	}
+}
