@@ -25,3 +25,23 @@ func TestEvaluate(t *testing.T) {
 	}
 	fmt.Println("TestEvaluate ok")
 }
+
+func TestCheckAndEvaluate(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		setUp()
+		ch := make(chan Record)
+		sfen := SFEN_STARTPOS
+		move := newMove(newMasu(7, 7), newMasu(7, 6), FU)
+		go checkAndEvaluate(ch, sfen, move, SENTE)
+		r := <-ch
+		assert(r.move_str, "7g7f")
+		assert(r.score > 0, true)
+		assert(r.is_oute, false)
+	}
+	fmt.Println("TestCheckAndEvaluate ok")
+}

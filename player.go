@@ -121,8 +121,15 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 			}
 		}
 	}
-	first_result = select_table.records[0].toSearchResult()
-	result_ch <- first_result
+	if select_table.count > 0 {
+		first_result = select_table.records[0].toSearchResult()
+		result_ch <- first_result
+	} else {
+		// デバッグ。
+		usiResponse("info string select_table is empty.")
+		result_ch <- first_result
+		return
+	}
 
 	/*
 		3.自分の手のうち、上位n件はもう1手読む
