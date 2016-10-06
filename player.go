@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -18,16 +19,18 @@ type SearchResult struct {
 }
 
 type Player struct {
-	master *Ban
-	config *PlayerConfig
-	cache  []Cache
+	master   *Ban
+	config   *PlayerConfig
+	cache    []Cache
+	rw_mutex *sync.RWMutex
 }
 
 func newPlayer(ban *Ban, config *PlayerConfig) *Player {
 	player := Player{
-		master: ban,
-		config: config,
-		cache:  make([]Cache, 260),
+		master:   ban,
+		config:   config,
+		cache:    make([]Cache, 260),
+		rw_mutex: new(sync.RWMutex),
 	}
 	for i := range player.cache {
 		player.cache[i] = newCache()
@@ -41,6 +44,12 @@ func newSearchResult(bm string, sc int) SearchResult {
 		score:    sc,
 	}
 	return sr
+}
+
+func (player *Player) putToCache(tesuu int, sfen string, value *Table) {
+	player.rw_mutex.Lock()
+	defer player.rw_mutex.Unlock()
+	player.cache[tesuu][sfen] = value
 }
 
 func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, available_ms int) {
@@ -76,7 +85,7 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 
 func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan string, ban *Ban, moves *Moves) {
 	// 現局面から、自分の手、相手の応手をひと通り生成
-	first_result := player.evaluate(ban, moves, 10)
+	first_result := player.evaluate(ban, moves, 10, 2)
 	// 2手の読みから最初の選択(詰み以外、first_result自体には意味がない)
 	if first_result.score == 9999 || first_result.score == -9999 {
 		result_ch <- first_result
@@ -131,7 +140,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 			if new_moves.count() == 0 {
 				// 相手の最善手で自分が詰んでいる
 			} else {
-				second_result := player.evaluate(new_ban, new_moves, 10)
+				second_result := player.evaluate(new_ban, new_moves, 10, 2)
 				if second_result.score == 9999 {
 					result_ch <- record.toSearchResult()
 					current_best = record
@@ -155,11 +164,12 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 	}
 }
 
-func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
+func (player *Player) evaluate(ban *Ban, moves *Moves, width int, depth int) SearchResult {
 	current_ban := ban
 	base_sfen := current_ban.toSFEN(true)
 	teban := current_ban.teban
-	table := newTable(width)
+	var table *Table
+	var oute_record *Record = nil
 
 	cached_table, ok := player.cache[current_ban.tesuu][base_sfen]
 	if ok {
@@ -167,12 +177,13 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
 		usiResponse("info string cache hit!")
 		table = cached_table
 	} else {
+		table = newTable(width)
+		oute_table := newTable(moves.count())
 		/*
 			1.最初の手を全部評価する
 		*/
 		{
 			move_ch := make(chan Record)
-			oute_table := newTable(10)
 			// 全部の手の自殺手チェックをし、評価を出す
 			for _, move := range moves.moves_map {
 				go checkAndEvaluate(move_ch, base_sfen, move, teban)
@@ -191,17 +202,15 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
 					}
 				}
 			}
-			if oute_table.count > 0 {
-				new_table := newTable(oute_table.count + table.count)
-				new_table.addAll(table)
-				new_table.addAll(oute_table)
-				table = new_table
-			}
+			new_table := newTable(table.count + oute_table.count)
+			new_table.addAll(table)
+			new_table.addAll(oute_table)
+			table = new_table
+			player.putToCache(current_ban.tesuu, base_sfen, table)
 			if table.count == 0 {
 				// ここで手がないのは自分が詰んでいる。
 				return newSearchResult("resign", -9999)
 			}
-			player.cache[current_ban.tesuu][base_sfen] = table
 		}
 		/*
 			2.上位n件のmoveから相手の全応手を出す
@@ -214,33 +223,26 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
 				if table_count == table_index {
 					break
 				}
-				// 上位n件にするなら、ここでforを抜ける
-				// 相手の最善手1手だけを取得する
-				go player.doEvaluate(move_ch, base_sfen, record.move_str)
+				// 相手の全応手と評価値を出す
+				go player.doEvaluate(move_ch, base_sfen, record.move_str, width, depth)
 			}
 			for i := 0; i < table_count; i++ {
 				// 上記goroutineの結果待ち
 				record := <-move_ch
-				next_table := newTable(1)
-				new_record := newRecord(record.score, record.move_str, record.parent_move_str, record.parent_sfen)
-				next_table.put(new_record)
-				player.cache[current_ban.tesuu+1][record.parent_sfen] = next_table
-			}
-			next_tables := player.cache[current_ban.tesuu+1]
-			for _, next_table := range next_tables {
-				if next_table.count > 0 {
-					next_record := next_table.records[0]
-					if next_record.score == -9999 {
-						if isUchiFuDume(next_record.parent_move_str) {
-							// 打ち歩詰めを回避する
-						} else {
-							return newSearchResult(next_record.parent_move_str, 9999)
-						}
+				if record.score == -9999 {
+					if isUchiFuDume(record.parent_move_str) {
+						// 打ち歩詰めを回避する
+					} else {
+						oute_record = newRecord(9999, record.parent_move_str, "", "")
 					}
 				}
 			}
 		}
 	}
+	if oute_record != nil {
+		return oute_record.toSearchResult()
+	}
+	// この結果はとりあえず返しているだけ。
 	return table.records[0].toSearchResult()
 }
 
@@ -262,47 +264,74 @@ func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
 	ch <- *(record)
 }
 
-func (player *Player) doEvaluate(ch chan Record, sfen string, move_str string) {
+func (player *Player) doEvaluate(ch chan Record, sfen string, move_str string, width int, depth int) {
 	next_ban := newBanFromSFEN(sfen)
 	next_ban.applySFENMove(move_str)
 	next_ban_sfen := next_ban.toSFEN(true)
 	enemy_moves := generateAllMoves(next_ban)
-	enemy_record := player.doEvaluate2(next_ban, enemy_moves, enemy_moves.count())
+	var enemy_record *Record
+	if depth > 1 {
+		result := player.evaluate(next_ban, enemy_moves, width, depth-1)
+		enemy_record = newRecord(result.score, result.bestmove, "", "")
+	} else {
+		enemy_record = player.doEvaluate2(next_ban, enemy_moves, width)
+	}
 	enemy_record.parent_move_str = move_str
 	enemy_record.parent_sfen = next_ban_sfen
+	// ここで返すのはあくまで終了の合図のようなもの。
 	ch <- *(enemy_record)
 }
 
+// evaluateの前半部分と同じ。統合すべきかも
 func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
 	next_ban := ban
 	base_sfen := next_ban.toSFEN(true)
 	teban := next_ban.teban
-	// table := newTable(moves.count())
-	table := newTable(1)
-	/*
-		1.最初の手を全部評価する
-	*/
-	{
-		move_ch := make(chan Record)
-		// 全部の手の自殺手チェックをし、評価を出す
-		for _, move := range moves.moves_map {
-			go checkAndEvaluate(move_ch, base_sfen, move, teban)
-		}
-		for i := 0; i < moves.count(); i++ {
-			// 上記goroutineの結果待ち
-			record := <-move_ch
-			if record.score == -9999 {
-				// 自殺手
-			} else {
-				table.put(&record)
+	var table *Table
+
+	cached_table, ok := player.cache[next_ban.tesuu][base_sfen]
+	if ok {
+		// すでに読んだ手
+		table = cached_table
+	} else {
+		table = newTable(width)
+		oute_table := newTable(moves.count())
+		/*
+			1.最初の手を全部評価する
+		*/
+		{
+			move_ch := make(chan Record)
+			// 全部の手の自殺手チェックをし、評価を出す
+			for _, move := range moves.moves_map {
+				go checkAndEvaluate(move_ch, base_sfen, move, teban)
+			}
+			for i := 0; i < moves.count(); i++ {
+				// 上記goroutineの結果待ち
+				record := <-move_ch
+				if record.score == -9999 {
+					// 自殺手
+				} else {
+					if record.is_oute {
+						// 王手なら、別のテーブルにも入れてそちらで読む。
+						oute_table.put(&record)
+					} else {
+						table.put(&record)
+					}
+				}
+			}
+			new_table := newTable(table.count + oute_table.count)
+			new_table.addAll(table)
+			new_table.addAll(oute_table)
+			table = new_table
+			player.putToCache(next_ban.tesuu, base_sfen, table)
+			if table.count == 0 {
+				// ここで手がないのは自分が詰んでいる。
+				return newRecord(-9999, "resign", "", "")
 			}
 		}
 	}
-	if table.count > 0 {
-		return table.records[0]
-	} else {
-		return newRecord(-9999, "resign", "", "")
-	}
+	// この結果はとりあえず返しているだけ。
+	return table.records[0]
 }
 
 func evaluateMove(ban *Ban, move *Move) (score int) {
