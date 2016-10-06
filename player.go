@@ -382,7 +382,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	// 逃げる手を評価
 	if aite_kiki.count(move.from) > 0 {
 		if aite_kiki.count(move.to) == 0 {
-			score += int(move.kind.demote()+1) * 80
+			score += int(move.kind.demote()+1) * 60
 		}
 	}
 

@@ -10,7 +10,7 @@ import (
 )
 
 const SW_NAME = "HoneyWaffle"
-const SW_VERSION = "0.1.0"
+const SW_VERSION = "2.0.0"
 const AUTHOR = "Mitsuhiko Watanabe"
 
 const SFEN_STARTPOS = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
@@ -18,7 +18,6 @@ const SFEN_STARTPOS = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
 const SAFETY_MS = 3 * 1000
 
 var master_ban *Ban
-
 var write_buffer *bufio.Writer
 
 func main() {
@@ -131,8 +130,8 @@ func doGo(command string) {
 		my_ms = wtime + byoyomi
 	}
 	available_ms = byoyomi - SAFETY_MS
-	if (my_ms/50)-SAFETY_MS > available_ms {
-		available_ms = (my_ms / 50) - SAFETY_MS
+	if (my_ms/40)-SAFETY_MS > available_ms {
+		available_ms = (my_ms / 40) - SAFETY_MS
 	}
 
 	// mainでの時間管理
@@ -156,7 +155,8 @@ func doGo(command string) {
 
 func usiResponseBy(sr SearchResult) {
 	bestmove := sr.bestmove
-	usiResponse("info depth 1 nodes 1 score cp " + fmt.Sprint(sr.score) + " pv " + bestmove)
+	score := sr.score
+	usiResponse("info depth 1 nodes 1 score cp " + fmt.Sprint(score) + " pv " + bestmove)
 	usiResponse("bestmove " + bestmove)
 }
 
