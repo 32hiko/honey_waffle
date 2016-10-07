@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ func main() {
 }
 
 func setUp() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	write_buffer = bufio.NewWriter(os.Stdout)
 }
 
