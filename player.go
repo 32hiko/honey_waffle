@@ -184,7 +184,7 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int, is_deep bool) 
 		table = cached_table
 	} else {
 		table = newTable(width)
-		oute_table := newTable(moves.count())
+		oute_table := newTable(10)
 		/*
 			1.最初の手を全部評価する
 		*/

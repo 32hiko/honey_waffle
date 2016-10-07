@@ -132,8 +132,8 @@ func doGo(command string) {
 		my_ms = wtime + byoyomi
 	}
 	available_ms = byoyomi - SAFETY_MS
-	if (my_ms/30)-SAFETY_MS > available_ms {
-		available_ms = (my_ms / 30) - SAFETY_MS
+	if my_ms > 15*1000 {
+		available_ms = 15 * 1000
 	}
 
 	// mainでの時間管理
