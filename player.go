@@ -84,8 +84,9 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 }
 
 func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan string, ban *Ban, moves *Moves) {
+	width := 20
 	// 現局面から、自分の手、相手の応手をひと通り生成
-	first_result := player.evaluate(ban, moves, 10)
+	first_result := player.evaluate(ban, moves, width)
 	// 2手の読みから最初の選択(詰み以外、first_result自体には意味がない)
 	if first_result.score == 9999 || first_result.score == -9999 {
 		result_ch <- first_result
@@ -106,6 +107,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 				if next_table.count > 0 {
 					next_record := next_table.records[0]
 					if record.move_str == next_record.parent_move_str {
+
 						usiResponse(
 							"info score cp " +
 								fmt.Sprint(record.score-next_record.score) +
@@ -113,6 +115,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 								next_record.parent_move_str +
 								" " +
 								next_record.move_str)
+
 						r := newRecord(record.score-next_record.score, record.move_str, "", "")
 						r.addChild(next_record)
 						select_table.put(r)
@@ -140,7 +143,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 			if new_moves.count() == 0 {
 				// 相手の最善手で自分が詰んでいる
 			} else {
-				second_result := player.evaluate(new_ban, new_moves, 10)
+				second_result := player.evaluate(new_ban, new_moves, width)
 				if second_result.score == 9999 {
 					result_ch <- record.toSearchResult()
 					current_best = record
