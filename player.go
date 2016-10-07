@@ -344,20 +344,13 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	// 成る手を評価する
 	if move.promote {
 		score += int(KIN) * 100
-		/*
-		if move.kind < KIN {
-			score += int(KIN-move.kind) * 100
-		} else {
-			score += int(KIN) * 100
-		}
-		*/
 	}
 
 	// 相手の手番になっているので、自分の手番が相手（ややこしい）
 	my_teban := ban.teban.aite()
 	// 前進する手を評価
 	if move.isForward(my_teban) {
-		score += int(NO_KIND-move.kind) * 2
+		score += int(NO_KIND-move.kind) * 5
 	}
 
 	// 指運
@@ -378,7 +371,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 		}
 		// ただ（または数的不利）な駒ごとに減点
 		if aite_kiki.count(masu) > teban_kiki.count(masu) {
-			score -= int(koma.kind.demote()+1) * 90
+			score -= int(koma.kind.demote()+1) * 70
 		}
 
 	}
@@ -413,7 +406,7 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	// 逃げる手を評価
 	if aite_kiki.count(move.from) > 0 {
 		if aite_kiki.count(move.to) == 0 {
-			score += int(move.kind.demote()+1) * 60
+			score += int(move.kind.demote()+1) * 40
 		}
 	}
 
