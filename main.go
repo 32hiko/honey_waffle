@@ -16,7 +16,7 @@ const AUTHOR = "Mitsuhiko Watanabe"
 
 const SFEN_STARTPOS = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
 
-const SAFETY_MS = 3 * 1000
+const SAFETY_MS = 3 * 400
 
 var master_ban *Ban
 var write_buffer *bufio.Writer
@@ -132,8 +132,8 @@ func doGo(command string) {
 		my_ms = wtime + byoyomi
 	}
 	available_ms = byoyomi - SAFETY_MS
-	if (my_ms/40)-SAFETY_MS > available_ms {
-		available_ms = (my_ms / 40) - SAFETY_MS
+	if (my_ms/30)-SAFETY_MS > available_ms {
+		available_ms = (my_ms / 30) - SAFETY_MS
 	}
 
 	// mainでの時間管理

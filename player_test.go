@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestEvaluate(t *testing.T) {
+func IgnoreTestEvaluate(t *testing.T) {
 	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {
 			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
@@ -28,7 +28,7 @@ func TestEvaluate(t *testing.T) {
 	fmt.Println("TestEvaluate ok")
 }
 
-func TestCheckAndEvaluate(t *testing.T) {
+func IgnoreTestCheckAndEvaluate(t *testing.T) {
 	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {
 			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
@@ -48,7 +48,7 @@ func TestCheckAndEvaluate(t *testing.T) {
 	fmt.Println("TestCheckAndEvaluate ok")
 }
 
-func TestGoroutine(t *testing.T) {
+func IgnoreTestGoroutine(t *testing.T) {
 	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {
 			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
@@ -90,14 +90,14 @@ func TestEvaluateMain(t *testing.T) {
 		player := newPlayer(ban, &PlayerConfig{})
 		search_ch := make(chan SearchResult)
 		eval_stop_ch := make(chan string)
-		main_timer := time.NewTimer(time.Duration(60*1000) * time.Millisecond)
+		main_timer := time.NewTimer(time.Duration(30*1000) * time.Millisecond)
 		var bestmove SearchResult
 		go player.evaluateMain(search_ch, eval_stop_ch, ban, moves)
 		for {
 			select {
 			case result := <-search_ch:
 				bestmove = result
-				fmt.Println(bestmove.bestmove + " " + fmt.Sprint(bestmove.score))
+				fmt.Println("[Test]" + bestmove.bestmove + " " + fmt.Sprint(bestmove.score))
 			case <-main_timer.C:
 				// mainにて探索タイムアウト
 				close(eval_stop_ch)
@@ -110,7 +110,7 @@ func TestEvaluateMain(t *testing.T) {
 	}
 }
 
-func TestDenou(t *testing.T) {
+func IgnoreTestDenou(t *testing.T) {
 	assert := func(actual interface{}, expected interface{}) {
 		if actual != expected {
 			t.Errorf("actual:[%v] expected:[%v]", actual, expected)

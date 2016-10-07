@@ -85,9 +85,9 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 }
 
 func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan string, ban *Ban, moves *Moves) {
-	width := 20
+	width := 10
 	// 現局面から、自分の手、相手の応手をひと通り生成
-	first_result := player.evaluate(ban, moves, width)
+	first_result := player.evaluate(ban, moves, width, true)
 	// 2手の読みから最初の選択(詰み以外、first_result自体には意味がない)
 	if first_result.score == 9999 || first_result.score == -9999 {
 		result_ch <- first_result
@@ -107,13 +107,15 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 			for _, next_table := range next_tables {
 				if next_table.count > 0 {
 					next_record := next_table.records[0]
-					if record.move_str == next_record.parent_move_str {
-
+					temp_ban := newBanFromSFEN(base_sfen)
+					temp_ban.applySFENMove(record.move_str)
+					temp_sfen := temp_ban.toSFEN(true)
+					if temp_sfen == next_record.parent_sfen {
 						usiResponse(
 							"info score cp " +
 								fmt.Sprint(record.score-next_record.score) +
 								" pv " +
-								next_record.parent_move_str +
+								record.move_str +
 								" " +
 								next_record.move_str)
 
@@ -144,7 +146,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 			if new_moves.count() == 0 {
 				// 相手の最善手で自分が詰んでいる
 			} else {
-				second_result := player.evaluate(new_ban, new_moves, width)
+				second_result := player.evaluate(new_ban, new_moves, width, false)
 				if second_result.score == 9999 {
 					result_ch <- record.toSearchResult()
 					current_best = record
@@ -169,7 +171,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 	}
 }
 
-func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
+func (player *Player) evaluate(ban *Ban, moves *Moves, width int, is_deep bool) SearchResult {
 	current_ban := ban
 	base_sfen := current_ban.toSFEN(true)
 	teban := current_ban.teban
@@ -179,7 +181,6 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
 	cached_table, ok := player.cache[current_ban.tesuu][base_sfen]
 	if ok {
 		// すでに読んだ手
-		usiResponse("info string cache hit!")
 		table = cached_table
 	} else {
 		table = newTable(width)
@@ -229,7 +230,7 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
 					break
 				}
 				// 相手の全応手と評価値を出す
-				go player.doEvaluate(move_ch, base_sfen, record.move_str, width)
+				go player.doEvaluate(move_ch, base_sfen, record.move_str, width, is_deep)
 			}
 			for i := 0; i < table_count; i++ {
 				// 上記goroutineの結果待ち
@@ -256,7 +257,7 @@ func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
 	move_str := move.toUSIMove()
 	next_ban.applySFENMove(move_str)
 	next_ban.createKomap()
-	record := newRecord(0, move_str, "", "")
+	record := newRecord(0, move_str, "", sfen)
 	if next_ban.isOute(teban) {
 		// ここでの王手は自殺手を意味する。評価できない。
 		record.score = -9999
@@ -269,12 +270,19 @@ func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
 	ch <- *(record)
 }
 
-func (player *Player) doEvaluate(ch chan Record, sfen string, move_str string, width int) {
+func (player *Player) doEvaluate(ch chan Record, sfen string, move_str string, width int, is_deep bool) {
 	next_ban := newBanFromSFEN(sfen)
 	next_ban.applySFENMove(move_str)
 	next_ban_sfen := next_ban.toSFEN(true)
 	enemy_moves := generateAllMoves(next_ban)
-	enemy_record := player.doEvaluate2(next_ban, enemy_moves, width)
+	var enemy_record *Record
+	if is_deep {
+		result := player.evaluate(next_ban, enemy_moves, width, false)
+		enemy_record = newRecord(result.score, result.bestmove, "", "")
+	} else {
+		enemy_record = player.doEvaluate2(next_ban, enemy_moves, width)
+	}
+	// enemy_record := player.doEvaluate2(next_ban, enemy_moves, width)
 	enemy_record.parent_move_str = move_str
 	enemy_record.parent_sfen = next_ban_sfen
 	// ここで返すのはあくまで終了の合図のようなもの。
