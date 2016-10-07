@@ -75,8 +75,9 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 			// mainにて探索タイムアウト
 			if !open {
 				// TODO:自殺手を含んでいるので、せめて1手読みの最善手を返したい
-				close(eval_stop_ch)
 				result_ch <- bestmove
+				close(eval_stop_ch)
+				// result_ch <- bestmove
 				return
 			}
 		}

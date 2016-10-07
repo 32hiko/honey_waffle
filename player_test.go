@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -107,4 +108,17 @@ func TestEvaluateMain(t *testing.T) {
 
 		}
 	}
+}
+
+func TestDenou(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	// runtime.GOMAXPROCS(runtime.NumCPU())
+	fmt.Println(runtime.NumCPU())
+	// fmt.Println(runtime.GOMAXPROCS)
+	assert(0, 0)
+	fmt.Println("TestDenou ok")
 }
