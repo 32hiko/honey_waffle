@@ -152,13 +152,14 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 					current_best = record
 				}
 			}
-
-			// 無限ループ抜ける用
+			// ループ抜ける用
 			select {
 			case _, open := <-stop_ch:
 				if !open {
 					return
 				}
+			default:
+				continue
 			}
 		}
 	}

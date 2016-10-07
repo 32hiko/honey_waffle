@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestEvaluate(t *testing.T) {
@@ -70,6 +71,40 @@ func TestGoroutine(t *testing.T) {
 				// チャンネルから受信したとき以外はこちらなので、基本ずっと待ち。
 				fmt.Println("waiting...")
 			}
+		}
+	}
+}
+
+func TestEvaluateMain(t *testing.T) {
+	assert := func(actual interface{}, expected interface{}) {
+		if actual != expected {
+			t.Errorf("actual:[%v] expected:[%v]", actual, expected)
+		}
+	}
+	{
+		fmt.Println("TestEvaluateMain start")
+		setUp()
+		ban := newBanFromSFEN(SFEN_STARTPOS)
+		moves := generateAllMoves(ban)
+		player := newPlayer(ban, &PlayerConfig{})
+		search_ch := make(chan SearchResult)
+		eval_stop_ch := make(chan string)
+		main_timer := time.NewTimer(time.Duration(60*1000) * time.Millisecond)
+		var bestmove SearchResult
+		go player.evaluateMain(search_ch, eval_stop_ch, ban, moves)
+		for {
+			select {
+			case result := <-search_ch:
+				bestmove = result
+				fmt.Println(bestmove.bestmove + " " + fmt.Sprint(bestmove.score))
+			case <-main_timer.C:
+				// mainにて探索タイムアウト
+				close(eval_stop_ch)
+				assert(0, 0)
+				fmt.Println("TestEvaluateMain ok")
+				return
+			}
+
 		}
 	}
 }
