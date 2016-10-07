@@ -343,23 +343,26 @@ func evaluateMove(ban *Ban, move *Move) (score int) {
 	}
 	// 成る手を評価する
 	if move.promote {
+		score += int(KIN) * 100
+		/*
 		if move.kind < KIN {
 			score += int(KIN-move.kind) * 100
 		} else {
 			score += int(KIN) * 100
 		}
+		*/
 	}
 
 	// 相手の手番になっているので、自分の手番が相手（ややこしい）
 	my_teban := ban.teban.aite()
 	// 前進する手を評価
 	if move.isForward(my_teban) {
-		score += int(NO_KIND-move.kind) * 5
+		score += int(NO_KIND-move.kind) * 2
 	}
 
 	// 指運
 	rand.Seed(time.Now().UnixNano())
-	score += rand.Intn(20)
+	score += rand.Intn(30)
 
 	// 利きのチェック
 	teban_kiki := ban.getTebanKiki(my_teban)
