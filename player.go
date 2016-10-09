@@ -87,7 +87,7 @@ func (player *Player) search(result_ch chan SearchResult, stop_ch chan string, a
 func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan string, ban *Ban, moves *Moves) {
 	width := 10
 	// 現局面から、自分の手、相手の応手をひと通り生成
-	first_result := player.evaluate(ban, moves, width, true)
+	first_result := player.evaluate(ban, moves, width)
 	// 2手の読みから最初の選択(詰み以外、first_result自体には意味がない)
 	if first_result.score == 9999 || first_result.score == -9999 {
 		result_ch <- first_result
@@ -146,7 +146,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 			if new_moves.count() == 0 {
 				// 相手の最善手で自分が詰んでいる
 			} else {
-				second_result := player.evaluate(new_ban, new_moves, width, false)
+				second_result := player.evaluate(new_ban, new_moves, width)
 				if second_result.score == 9999 {
 					result_ch <- record.toSearchResult()
 					current_best = record
@@ -171,7 +171,7 @@ func (player *Player) evaluateMain(result_ch chan SearchResult, stop_ch chan str
 	}
 }
 
-func (player *Player) evaluate(ban *Ban, moves *Moves, width int, is_deep bool) SearchResult {
+func (player *Player) evaluate(ban *Ban, moves *Moves, width int) SearchResult {
 	current_ban := ban
 	base_sfen := current_ban.toSFEN(true)
 	teban := current_ban.teban
@@ -230,7 +230,7 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int, is_deep bool) 
 					break
 				}
 				// 相手の全応手と評価値を出す
-				go player.doEvaluate(move_ch, base_sfen, record.move_str, width, is_deep)
+				go player.doEvaluate(move_ch, base_sfen, record.move_str, width)
 			}
 			for i := 0; i < table_count; i++ {
 				// 上記goroutineの結果待ち
@@ -247,6 +247,10 @@ func (player *Player) evaluate(ban *Ban, moves *Moves, width int, is_deep bool) 
 	}
 	if oute_record != nil {
 		return oute_record.toSearchResult()
+	}
+	if table.count == 0 {
+		// ここで手がないのは自分が詰んでいる。
+		return newSearchResult("resign", -9999)
 	}
 	// この結果はとりあえず返しているだけ。
 	return table.records[0].toSearchResult()
@@ -270,19 +274,12 @@ func checkAndEvaluate(ch chan Record, sfen string, move *Move, teban Teban) {
 	ch <- *(record)
 }
 
-func (player *Player) doEvaluate(ch chan Record, sfen string, move_str string, width int, is_deep bool) {
+func (player *Player) doEvaluate(ch chan Record, sfen string, move_str string, width int) {
 	next_ban := newBanFromSFEN(sfen)
 	next_ban.applySFENMove(move_str)
 	next_ban_sfen := next_ban.toSFEN(true)
 	enemy_moves := generateAllMoves(next_ban)
-	var enemy_record *Record
-	if is_deep {
-		result := player.evaluate(next_ban, enemy_moves, width, false)
-		enemy_record = newRecord(result.score, result.bestmove, "", "")
-	} else {
-		enemy_record = player.doEvaluate2(next_ban, enemy_moves, width)
-	}
-	// enemy_record := player.doEvaluate2(next_ban, enemy_moves, width)
+	enemy_record := player.doEvaluate2(next_ban, enemy_moves, width)
 	enemy_record.parent_move_str = move_str
 	enemy_record.parent_sfen = next_ban_sfen
 	// ここで返すのはあくまで終了の合図のようなもの。
@@ -336,6 +333,10 @@ func (player *Player) doEvaluate2(ban *Ban, moves *Moves, width int) *Record {
 				return newRecord(-9999, "resign", "", "")
 			}
 		}
+	}
+	if table.count == 0 {
+		// ここで手がないのは自分が詰んでいる。
+		return newRecord(-9999, "resign", "", "")
 	}
 	// この結果はとりあえず返しているだけ。
 	return table.records[0]
